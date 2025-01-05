@@ -1,8 +1,10 @@
 import { Block } from './block';
 import { Word } from './word';
+import { Spot } from './spot';
 
 export interface TrickPart {
     points: number;
+
     getPercentageBefore(): number;
     getPercentageAfter(): number;
     getPoints(): number;
@@ -12,30 +14,38 @@ export interface TrickPart {
 
 export class Trick {
     parts: Array<TrickPart>;
-    idx_first_block: number;
+    idxFirstBlock: number;
+    spot: Spot;
+    points: number;
 
-    constructor(parts: Array<TrickPart>) {
-        let idx_first_block: number | undefined;
+    constructor(parts: Array<TrickPart>, spot: Spot) {
+        let idxFirstBlock: number | undefined;
         
         for(let i = 0; i < parts.length; i++) {
             if (parts[i].isBlock()) {
-                idx_first_block = i;
+                idxFirstBlock = i;
                 break;
             }
         }
         
-        if (typeof idx_first_block == 'undefined') {
-            throw new Error('The Trick object doesn\'t contain any Block');
-        }
+        this.assertBlockFound(idxFirstBlock);
 
         this.parts = parts;
-        this.idx_first_block = idx_first_block;
+        this.spot = spot;
+        this.idxFirstBlock = idxFirstBlock;
+        this.points = this.calculatePoints();
     }
 
-    calculatePoints(): number {
+    private assertBlockFound(idxFirstBlock: number | undefined): asserts idxFirstBlock is number {
+        if (typeof idxFirstBlock == 'undefined') {
+            throw new Error('Trick cannot be initialized because the given Array<TrickPart> has no Blocks');
+        }
+    }
+
+    private calculatePoints(): number {
         let points = 0;
         
-        for(let i = this.idx_first_block; i < this.parts.length; i++) {
+        for(let i = this.idxFirstBlock; i < this.parts.length; i++) {
             let part = this.parts[i];
 
             points += part.getPoints();
@@ -44,11 +54,15 @@ export class Trick {
             }
         };
 
-        for(let i = this.idx_first_block - 1; i >= 0; i--) {
+        for(let i = this.idxFirstBlock - 1; i >= 0; i--) {
             points += this.parts[i].getPercentageAfter() * points;
         }
 
-        return points;
+        return (points + points * this.spot);
+    }
+
+    getPoints(): number {
+        return this.points;
     }
 
     printToConsole(): void {
@@ -60,48 +74,51 @@ export class Trick {
                 console.log("    Block --> Points: " + part.getPoints());
             }
         }
-        console.log('\n    Total Points: ' + this.calculatePoints());
+        console.log('\n    Total Points: ' + this.getPoints());
         console.log('---------------------------------------\n');
     }
 }
 
 
 export class UnorderedTrick {
-    parts: Array<string>
+    parts: Array<string>;
+    spot: Spot;
 
-    constructor(parts: Array<string>) {
+    constructor(parts: Array<string>, spot: Spot) {
         this.parts = parts;
+        this.spot = spot;
     }
     
     toWords(): Array<Word> {
-        let a: Array<Word> = [];
+        let array: Array<Word> = [];
         for(const part of this.parts) {
-            a.push(new Word(part));
+            array.push(new Word(part));
         }
-        return a;
+        return array;
     }
 
     toTrick(): Trick {
         let words: Array<Word> = this.toWords();
-        let trick_parts: Array<TrickPart> = [];
-        let block_words: Array<Word> = [];
+        let trickParts: Array<TrickPart> = [];
+        let blockWords: Array<Word> = [];
 
         for(const word of words){
             if (word.applyToWhole) {
-                trick_parts.push(word);
+                trickParts.push(word);
             } else {
-                block_words.push(word);
+                blockWords.push(word);
                 if (word.getPoints() != 0) {
-                    trick_parts.push(new Block(block_words));
-                    block_words = [];
+                    trickParts.push(new Block(blockWords));
+                    blockWords = [];
                 }
             }
         }
 
-        for(const bw of block_words) {
-            trick_parts.push(bw);
+        for(const blockWord of blockWords) {
+            trickParts.push(blockWord);
         }
 
-        return new Trick(trick_parts);
+        return new Trick(trickParts, this.spot);
     }
 }
+
