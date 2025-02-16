@@ -1,12 +1,38 @@
-import { Word } from './word';
+import { Word } from "./word";
+import { Idx, Trick } from "./trick";
+import { TrickList } from "./trickList";
 
 // The values represent the percentages
 export enum Spot {
-    Flat = 0.5,
-    IntoBank = 0.3,
-    DropIn = 0.2,
-    Air = 0.0,
-    Flyout = 0.0,
-    OffLedge = 0.3
+  Flat,
+  IntoBank,
+  DropIn,
+  Air,
+  Flyout,
+  OffLedge,
+}
+
+export namespace Spot {
+	export function getPercentage(spot: Spot): number {
+		switch (spot) {
+			case Spot.Flat: return 0.5;
+			case Spot.IntoBank: return 0.3;
+			case Spot.DropIn: return 0.2;
+			case Spot.Air: return 0.0;
+			case Spot.Flyout: return 0.0;
+			case Spot.OffLedge: return 0.3;
+		}
+	}
+	
+	export function getMaximumPercentage(spots: Array<Spot>): number {
+		let max_perc: number = 0.0;
+		spots.forEach(s => {
+			if(Spot.getPercentage(s) > max_perc) {
+				max_perc = Spot.getPercentage(s);
+			}
+		});
+		
+		return max_perc;
+	}
 }
 

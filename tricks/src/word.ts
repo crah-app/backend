@@ -23,7 +23,7 @@ export class Word implements TrickPart {
             }
         }
 
-        console.warn("Unrecognised word: " + word);        
+        console.warn("Unrecognised word: " + word);
     }
 
     getPercentageBefore(): number {
@@ -45,5 +45,13 @@ export class Word implements TrickPart {
     isBlock(): boolean {
         return false;
     }
+
+	containsWord(word: string): boolean {
+		return this.word === word;
+	}
+
+	getWords(): Array<string> {
+		return [this.word];
+	}
 }
 

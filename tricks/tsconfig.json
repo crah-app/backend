@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+	  "target": "es2023",
       "module": "commonjs",
       "noImplicitAny": true,
       "removeComments": true,
@@ -14,6 +15,7 @@
       "src/main.ts",
       "src/block.ts",
       "src/trick.ts",
-      "src/word.ts"
+      "src/trickList.ts"
+      "src/word.ts",
     ]
   }

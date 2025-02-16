@@ -42,4 +42,15 @@ export class Block implements TrickPart {
     isBlock(): boolean {
         return true;
     }
+
+	containsWord(word: string): boolean {
+		this.words.forEach(p => {
+			if (p.containsWord(word)) return true;
+		});
+		return false;
+	}
+
+	getWords(): Array<string> {
+		return this.words.map(w => w.word);
+	}
 }
