@@ -1,0 +1,22 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.verifyJwt = verifyJwt;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const errors_1 = require("./errors");
+async function verifyJwt(req, res, secret, next) {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token)
+        return { type: errors_1.ErrType.JwtTokenNotFound };
+    if (!decoded.iat)
+        return { type: errors_1.ErrType.JwtTokenMissingIat };
+    const decoded = jsonwebtoken_1.default.verify(token, secret);
+    req.token = decoded;
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decoded.iat < currentTime)
+        return { type: errors_1.ErrType.JwtTokenExpired };
+    return next(req, res);
+}
+//# sourceMappingURL=userAuth.js.map

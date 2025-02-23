@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
 	  "target": "es2023",
+	  "outDir": "build",
       "module": "commonjs",
       "noImplicitAny": true,
       "removeComments": true,
@@ -11,11 +12,9 @@
       "strict": true,
       "moduleResolution": "node",
     },
-    "files": [
+    "include": [
       "src/main.ts",
-      "src/block.ts",
-      "src/trick.ts",
-      "src/trickList.ts"
-      "src/word.ts",
-    ]
+      "src/api/*.ts",
+      "src/tricks/*.ts"
+    ],
   }
