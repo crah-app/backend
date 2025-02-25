@@ -3,12 +3,11 @@ export interface Err {
 	message?: any
 }
 
-// HTTP ERROR CODES TO ADJUST
 export enum ErrType {
-	MySqlConnectionFailed = 500,
-	MySqlFailedQuery = 404,
-	JwtTokenNotFound = 300,
-	JwtTokenMissingIat = 200,
-	JwtTokenMissingSub = 100,
-	JwtTokenExpired = 150,
+	MySqlConnectionFailed = 500, // Internal Server error
+	MySqlFailedQuery = 500, // Internal Server error
+	JwtTokenNotFound = 400, // Bad Request
+	JwtTokenMissingIat = 401, // Unauthorized
+	JwtTokenMissingSub = 401, // Unauthorized
+	JwtTokenExpired = 401, // Unauthorized
 }
