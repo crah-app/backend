@@ -1,0 +1,23 @@
+ {
+	"name": "crah-backend",
+	"version": "0.0.1",
+	"description": "Crah's API",
+	"main": "build/src/main.js",
+		"scripts": {
+			"start": "node ./build/src/main.js"
+		},
+		"dependencies": {
+			"express": "5.0.0",
+			"mysql": "2.18.1",
+			"cors": "2.18.1",
+			"dotenv": "16.4.7",
+			"cookies": "0.9.1",
+			"jsonwebtoken": "9.0.2"
+		},
+		"repository": {
+			"type": "git",
+			"url": "https://github.com/crah-app/backend.git"
+		},
+		"author": "Tommaso Sana",
+		"keywords": ["server", "express"]
+	}

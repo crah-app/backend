@@ -3,6 +3,7 @@ export interface Err {
 	message?: any
 }
 
+// HTTP ERROR CODES TO ADJUST
 export enum ErrType {
 	MySqlConnectionFailed = 500,
 	MySqlFailedQuery = 404,

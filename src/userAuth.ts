@@ -23,7 +23,7 @@ export async function verifyJwt(req: Request, res: Response, secret: string, nex
    if ((decoded as JwtPayload).iat! < currentTime) return {type: ErrType.JwtTokenExpired};
    console.log((decoded as JwtPayload).sub!);
    if ((decoded as JwtPayload).sub !== undefined ) return {type: ErrType.JwtTokenMissingSub};
-   console.log("HELLO");
+
    return next(req, res, (decoded as JwtPayload).sub);
 }
 
