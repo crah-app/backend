@@ -1,14 +1,15 @@
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
 import { Request, Response } from 'express';
-import { Err, ErrType } from './errors';
+import { Success, Err, ErrType } from './errors';
 
 // https://clerk.com/docs/backend-requests/handling/manual-jwt
+
 interface JWTRequest extends Request {
 	token: string | JwtPayload;
 }
 
-export async function verifyJwt(req: Request, res: Response, secret: string, next: Function): Promise<Err | undefined> {
+export async function verifyJwt(req: Request, res: Response, secret: string, next: Function): Promise<Err | Success> {
    const token: undefined | string = req.header('Authorization')?.replace('Bearer ', '');
 
    if (!token) return {type: ErrType.JwtTokenNotFound};

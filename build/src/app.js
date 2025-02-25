@@ -17,28 +17,37 @@ class App {
     }
     async get(path, fn) {
         this.inner.get(path, async (req, res) => {
-            let err = await fn(req, res);
-            if (err !== undefined) {
-                console.log(err);
-                res.status(err.type).send(err.message);
+            let r = await fn(req, res);
+            if ("type" in r) {
+                console.error(r);
+                res.status(r.type).send(r.message);
+            }
+            else {
+                r(req, res);
             }
         });
     }
     async post(path, fn) {
         this.inner.post(path, async (req, res) => {
-            let err = await fn(req, res);
-            if (err !== undefined) {
-                console.log(err);
-                res.status(err.type).send(err.message);
+            let r = await fn(req, res);
+            if ("type" in r) {
+                console.error(r);
+                res.status(r.type).send(r.message);
+            }
+            else {
+                r(req, res);
             }
         });
     }
     async delete(path, fn) {
         this.inner.delete(path, async (req, res) => {
-            let err = await fn(req, res);
-            if (err !== undefined) {
-                console.log(err);
-                res.status(err.type).send(err.message);
+            let r = await fn(req, res);
+            if ("type" in r) {
+                console.error(r);
+                res.status(r.type).send(r.message);
+            }
+            else {
+                r(req, res);
             }
         });
     }

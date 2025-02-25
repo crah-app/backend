@@ -1,8 +1,7 @@
 import express from 'express';
 import { Application, Request, Response } from 'express';
 import cors from 'cors';
-import { Err, ErrType } from './errors';
-import { DbConnection } from './dbConnection';
+import { Err, Success } from './errors';
 
 export class App {
 	inner: Application;
@@ -16,35 +15,41 @@ export class App {
 		this.inner = app;
 	}
 
-	async get(path: string, fn: (req: Request, res: Response) => Promise<Err | undefined>) {
+	async get(path: string, fn: (req: Request, res: Response) => Promise<Err | Success>) {
 		this.inner.get(path, async (req, res) => {
-			let err: Err | undefined = await fn(req, res);
-
-			if(err !== undefined) {
-				console.log(err);
-				res.status(err!.type).send(err!.message);
-			}
-		});
-	}
-
-	async post(path: string, fn: (req: Request, res: Response) => Promise<Err | undefined>) {
-		this.inner.post(path, async (req, res) => {
-			let err: Err | undefined = await fn(req, res);
+			let r = await fn(req, res);
 			
-			if(err !== undefined) {
-				console.log(err);
-				res.status(err!.type).send(err!.message);
+			if("type" in r) {
+				console.error(r);
+				res.status(r.type).send(r.message);
+			} else {
+				r(req, res);
 			}
 		});
 	}
 
-	async delete(path: string, fn: (req: Request, res: Response) => Promise<Err | undefined>) {
-		this.inner.delete(path, async (req, res) => {
-			let err: Err | undefined = await fn(req, res);
+	async post(path: string, fn: (req: Request, res: Response) => Promise<Err | Success>) {
+		this.inner.post(path, async (req, res) => {
+			let r: Err | Success = await fn(req, res);
+			
+			if("type" in r) {
+				console.error(r);
+				res.status(r.type).send(r.message);
+			} else {
+				r(req, res);
+			}
+		});
+	}
 
-			if(err !== undefined) {
-				console.log(err);
-				res.status(err!.type).send(err!.message);
+	async delete(path: string, fn: (req: Request, res: Response) => Promise<Err | Success>) {
+		this.inner.delete(path, async (req, res) => {
+			let r: Err | Success = await fn(req, res);
+
+			if("type" in r) {
+				console.error(r);
+				res.status(r.type).send(r.message);
+			} else {
+				r(req, res);
 			}
 		});
 	}

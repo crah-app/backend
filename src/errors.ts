@@ -1,3 +1,5 @@
+import { Request, Response } from 'express';
+
 export interface Err {
 	type: ErrType,
 	message?: any
@@ -11,3 +13,5 @@ export enum ErrType {
 	JwtTokenMissingSub = 401, // Unauthorized
 	JwtTokenExpired = 401, // Unauthorized
 }
+
+export type Success = (req: Request, res: Response) => void;

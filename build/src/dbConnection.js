@@ -25,7 +25,7 @@ class DbConnection {
         return;
     }
     query(query, fn) {
-        return this.inner.query(query, fn);
+        return this.inner.query(query[0], query[1], fn);
     }
 }
 exports.DbConnection = DbConnection;

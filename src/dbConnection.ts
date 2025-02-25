@@ -1,7 +1,6 @@
 import { Err, ErrType } from './errors';
 import mysql from 'mysql';
 import { Connection, Query } from 'mysql';
-import { Request, Response } from 'express';
 
 export class DbConnection {
 	inner: Connection;
@@ -23,7 +22,7 @@ export class DbConnection {
 		return;
 	}
 	
-	query<T>(query: string, fn: (err: any, results: any) => T) {
-		return this.inner.query(query, fn);
+	query<T>(query: [string, ...args: any], fn: (err: any, results: any) => T) {
+		return this.inner.query(query[0], query[1], fn);
 	}
 }
