@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
-import { DbConnection } from "./dbConnection";
-import { App } from "./app";
-import { getTrickList, postTrick, deleteTrick } from "./trickListApi";
+import { DbConnection } from "./constants/dbConnection";
+import { App } from "./constants/app";
+import { getTrickList, postTrick, deleteTrick } from "./constants/trickListApi";
 
 dotenv.config();
 

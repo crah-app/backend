@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Word = void 0;
-const list = require("./../../assets/words.json");
+const list = require("./../../public/tricks/words.json");
 class Word {
     word;
     points = 0;

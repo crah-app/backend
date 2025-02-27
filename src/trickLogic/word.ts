@@ -1,5 +1,5 @@
 import { TrickPart } from './trick';
-import list = require("./../../assets/words.json");
+import list = require("./../../public/tricks/words.json");
 
 export class Word implements TrickPart {
     word: string;

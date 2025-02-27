@@ -2,8 +2,8 @@ import { Success, Err, ErrType } from './errors';
 import { Request, Response } from 'express';
 import { DbConnection } from './dbConnection';
 import { verifyJwt } from './userAuth';
-import { Trick, TrickDescription } from './tricks/trick';
-import { Spot } from './tricks/spot';
+import { Trick, TrickDescription } from '../trickLogic/trick';
+import { Spot } from '../trickLogic/spot';
 
 interface IdTrick {
 	id: number,

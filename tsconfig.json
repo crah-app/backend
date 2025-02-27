@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
-	  "target": "es2023",
-	  "outDir": "build",
-      "module": "commonjs",
+	    "target": "es2023",
+	    "outDir": "dist",
+      "module": "CommonJS",
       "noImplicitAny": true,
       "removeComments": true,
       "preserveConstEnums": true,
@@ -13,8 +13,9 @@
       "moduleResolution": "node",
     },
     "include": [
-      "src/main.ts",
-      "src/api/*.ts",
-      "src/tricks/*.ts"
+      "src/**/*.ts"
     ],
+    "exclude": [
+      "node_modules"
+    ]
   }

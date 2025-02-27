@@ -17,37 +17,37 @@ class App {
     }
     async get(path, fn) {
         this.inner.get(path, async (req, res) => {
-            let r = await fn(req, res);
-            if ("type" in r) {
-                console.error(r);
-                res.status(r.type).send(r.message);
+            let end = await fn(req, res);
+            if ("type" in end) {
+                console.error(end);
+                res.status(end.type).send(end.message);
             }
             else {
-                r(req, res);
+                end(req, res);
             }
         });
     }
     async post(path, fn) {
         this.inner.post(path, async (req, res) => {
-            let r = await fn(req, res);
-            if ("type" in r) {
-                console.error(r);
-                res.status(r.type).send(r.message);
+            let end = await fn(req, res);
+            if ("type" in end) {
+                console.error(end);
+                res.status(end.type).send(end.message);
             }
             else {
-                r(req, res);
+                end(req, res);
             }
         });
     }
     async delete(path, fn) {
         this.inner.delete(path, async (req, res) => {
-            let r = await fn(req, res);
-            if ("type" in r) {
-                console.error(r);
-                res.status(r.type).send(r.message);
+            let end = await fn(req, res);
+            if ("type" in end) {
+                console.error(end);
+                res.status(end.type).send(end.message);
             }
             else {
-                r(req, res);
+                end(req, res);
             }
         });
     }

@@ -5,7 +5,7 @@ exports.postTrick = postTrick;
 exports.deleteTrick = deleteTrick;
 const errors_1 = require("./errors");
 const userAuth_1 = require("./userAuth");
-const trick_1 = require("./tricks/trick");
+const trick_1 = require("../trickLogic/trick");
 async function getTrickList(req, res, db) {
     const userId = req.query.userId;
     return await new Promise((resolve, reject) => {

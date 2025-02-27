@@ -17,39 +17,39 @@ export class App {
 
 	async get(path: string, fn: (req: Request, res: Response) => Promise<Err | Success>) {
 		this.inner.get(path, async (req, res) => {
-			let r = await fn(req, res);
+			let end = await fn(req, res);
 			
-			if("type" in r) {
-				console.error(r);
-				res.status(r.type).send(r.message);
+			if("type" in end) {
+				console.error(end);
+				res.status(end.type).send(end.message);
 			} else {
-				r(req, res);
+				end(req, res);
 			}
 		});
 	}
 
 	async post(path: string, fn: (req: Request, res: Response) => Promise<Err | Success>) {
 		this.inner.post(path, async (req, res) => {
-			let r: Err | Success = await fn(req, res);
+			let end: Err | Success = await fn(req, res);
 			
-			if("type" in r) {
-				console.error(r);
-				res.status(r.type).send(r.message);
+			if("type" in end) {
+				console.error(end);
+				res.status(end.type).send(end.message);
 			} else {
-				r(req, res);
+				end(req, res);
 			}
 		});
 	}
 
 	async delete(path: string, fn: (req: Request, res: Response) => Promise<Err | Success>) {
 		this.inner.delete(path, async (req, res) => {
-			let r: Err | Success = await fn(req, res);
+			let end: Err | Success = await fn(req, res);
 
-			if("type" in r) {
-				console.error(r);
-				res.status(r.type).send(r.message);
+			if("type" in end) {
+				console.error(end);
+				res.status(end.type).send(end.message);
 			} else {
-				r(req, res);
+				end(req, res);
 			}
 		});
 	}
