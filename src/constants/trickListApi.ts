@@ -1,19 +1,20 @@
-import { Success, Err, ErrType } from './errors.js';
 import { Request, Response } from 'express';
-import  DbConnection  from './dbConnection.js';
 import { verifyJwt } from './userAuth.js';
 import { Trick, TrickDescription } from '../trickLogic/trick.js';
 import { Spot } from '../trickLogic/spot.js';
+import { Pool } from 'mysql2';
 
-export async function getTrickList(req: Request, res: Response, db: DbConnection): Promise<void> {
+type idTrickValueInterface = { id: number, trick: { name: string, spots: string[], date: string, points: number } };
+
+export async function getTrickList(req: Request, res: Response, db: Pool) {
     try {
         const userId = req.query.userId;
         if (!userId) {
             res.status(400).json({ error: "User ID is required" });
             return;
-        }
+        };
 
-        // SQL-Abfrage
+        // SQL-query
         const query = `
             SELECT Tricks.Id, Tricks.Name, Tricks.Points, Tricks.Date, Spots.Type
             FROM Tricks
@@ -21,22 +22,16 @@ export async function getTrickList(req: Request, res: Response, db: DbConnection
             WHERE Tricks.UserId = ?;
         `;
 
-        // Datenbankabfrage
-        const trickList = await new Promise<any>((resolve, reject) => {
-            db.query([query,userId], (err, results) => {
-                if (err) {
-                    reject({
-                        type: ErrType.MySqlFailedQuery,
-                        message: err.code ?? "Database query failed"
-                    });
-                }
-                resolve(results);
-            });
+        // database query
+        let trickList: Array<any> = [];
+
+        await db.query(query, [userId], (err, res) => {
+            if(err) console.log("An error occured while query: ",err);
         });
 
-        const idTricks: Map<number, { id: number, trick: { name: string, spots: string[], date: string, points: number } }> = new Map();
+        const idTricks: Map<number, idTrickValueInterface> = new Map();
 
-        // Gruppieren der Tricks
+        // group tricks
         trickList.forEach((row: any) => {
             if (idTricks.has(row.Id)) {
                 idTricks.get(row.Id)?.trick.spots.push(row.Type);
@@ -54,64 +49,48 @@ export async function getTrickList(req: Request, res: Response, db: DbConnection
         });
 
         res.json(Array.from(idTricks.values()));
+
     } catch (error) {
         console.error("Error in getTrickList:", error);
         res.status(500).json({ error: "An unexpected error occurred" });
     }
 }
 
-export async function postTrick(req: Request, res: Response, db: DbConnection, secret: string): Promise<Err | Success> {
-    // try {
-    //     return await verifyJwt(req, res, secret, async (userId: number) => {
-    //         await postTrickHelper(req, res, db, userId);
-    //     });
-    // } catch (error) {
-    //     console.error("Error in postTrick:", error);
-    //     res.status(500).json({ error: "Error during trick creation" });
-    // }
-
-	return await verifyJwt(req, res, secret, async (userId: number) => {
-		await postTrickHelper(req, res, db, userId);
-	});
-}
-
-async function postTrickHelper(req: Request, res: Response, db: DbConnection, userId: number): Promise<void> {
+export async function postTrick(req: Request, res: Response, db: Pool, secret: string) {
     try {
-        const parts: Array<string> = req.body.parts;
-        const spots: Array<Spot> = req.body.spots;
-        const date: Date = req.body.date;
-        
-        const description = new TrickDescription(parts, spots, date);
-        const trick: Trick = new Trick(description);
-
-        // SQL-Abfrage für das Hinzufügen eines Tricks
-        const query = 'INSERT INTO Tricks(UserId, Name, Points, Date) VALUES (?, ?, ?, ?)';
-        const trickId = await new Promise<number>((resolve, reject) => {
-            db.query([query,userId, trick.getName(), trick.getPoints(), date], (err, results) => {
-                if (err) {
-                    reject({
-                        type: ErrType.MySqlFailedQuery,
-                        message: err.stack ?? "Error inserting trick"
-                    });
-                }
-                resolve(results.insertId);
-            });
+        // Verify JWT and get userId
+        await verifyJwt(req, res, secret, async (userId: number) => {
+            await postTrickHelper(req, res, db, userId);
         });
 
-        // Spots für den Trick hinzufügen
+    } catch (error) {
+
+        console.error("Error in postTrick:", error);
+        res.status(500).json({ error: "An error occurred while adding the trick" });
+    }
+}
+
+async function postTrickHelper(req: Request, res: Response, db: Pool, userId: number) {
+    try {
+        const { parts, spots, date }: { parts: string[], spots: Spot[], date: Date } = req.body;
+        
+        // Create trick description and trick
+        const description = new TrickDescription(parts, spots, date);
+        const trick = new Trick(description);
+
+        // SQL query to insert trick
+        const query = 'INSERT INTO Tricks(UserId, Name, Points, Date) VALUES (?, ?, ?, ?)';
+        
+        // Perform the query and retrieve the result
+        const [result] = await db.promise().query(query, [userId, trick.getName(), trick.getPoints(), date]);
+        
+        // Get the insertId from the result (it's part of the first element in the result array)
+        const trickId = 1 /*result.insertId*/ // `insertId` should be accessible directly from the result
+
+        // Insert spots for the trick
+        const spotQuery = 'INSERT INTO Spots(TrickId, Type) VALUES (?, ?)';
         for (const spot of trick.spots) {
-            const spotQuery = 'INSERT INTO Spots(TrickId, Type) VALUES (?, ?)';
-            await new Promise<void>((resolve, reject) => {
-                db.query([spotQuery, trickId, spot], (err) => {
-                    if (err) {
-                        reject({
-                            type: ErrType.MySqlFailedQuery,
-                            message: err.stack ?? "Error inserting spot"
-                        });
-                    }
-                    resolve();
-                });
-            });
+            await db.promise().query(spotQuery, [trickId, spot]);
         }
 
         res.status(200).send("Trick added to the list");
@@ -121,55 +100,36 @@ async function postTrickHelper(req: Request, res: Response, db: DbConnection, us
     }
 }
 
-export async function deleteTrick(req: Request, res: Response, db: DbConnection, secret: string): Promise<Err | Success> {
-    // try {
-    //     return await verifyJwt(req, res, secret, async (userId: string) => {
-    //         await deleteTrickHelper(req, res, db, userId);
-    //     });
-    // } catch (error) {
-    //     console.error("Error in deleteTrick:", error);
-    //     res.status(500).json({ error: "Error during trick deletion" });
-    // }
+export async function deleteTrick(req: Request, res: Response, db: Pool, secret: string) {
+    try {
+        // Verify JWT and get userId
+        await verifyJwt(req, res, secret, async (userId: string) => {
+            await deleteTrickHelper(req, res, db, userId);
+        });
 
-	return await verifyJwt(req, res, secret, async (userId: string) => {
-		await deleteTrickHelper(req, res, db, userId);
-	});
+    } catch (error) {
+
+        console.error("Error in deleteTrick:", error);
+        res.status(500).json({ error: "An error occurred while deleting the trick" });
+    }
 }
 
-async function deleteTrickHelper(req: Request, res: Response, db: DbConnection, userId: string): Promise<void> {
+async function deleteTrickHelper(req: Request, res: Response, db: Pool, userId: string) {
     try {
         const trickId = req.query.trickId;
+        
+        // SQL query to delete the trick
+        const deleteTrickQuery = 'DELETE FROM Tricks WHERE Tricks.Id=? AND Tricks.UserId=?';
+        await db.promise().query(deleteTrickQuery, [trickId, userId]);
 
-        // SQL-Abfrage für das Löschen des Tricks
-        const query = 'DELETE FROM Tricks WHERE Tricks.Id=? AND Tricks.UserId=?';
-        await new Promise<void>((resolve, reject) => {
-            db.query([query,trickId, userId], (err, _) => {
-                if (err) {
-                    reject({
-                        type: ErrType.MySqlFailedQuery,
-                        message: err.stack ?? "Error deleting trick"
-                    });
-                }
-                resolve();
-            });
-        });
+        // SQL query to delete associated spots
+        const deleteSpotQuery = 'DELETE FROM Spots WHERE Spots.TrickId=?';
+        await db.promise().query(deleteSpotQuery, [trickId]);
 
-        // SQL-Abfrage für das Löschen der Spots
-        const spotQuery = 'DELETE FROM Spots WHERE Spots.TrickId=?';
-        await new Promise<void>((resolve, reject) => {
-            db.query([spotQuery,trickId], (err, _) => {
-                if (err) {
-                    reject({
-                        type: ErrType.MySqlFailedQuery,
-                        message: err.stack ?? "Error deleting spots"
-                    });
-                }
-                resolve();
-            });
-        });
+        res.status(200).send("Trick deleted from the list");
 
-        res.status(200).send("Trick deleted from the trick list");
     } catch (error) {
+
         console.error("Error in deleteTrickHelper:", error);
         res.status(500).json({ error: "An unexpected error occurred while deleting the trick" });
     }

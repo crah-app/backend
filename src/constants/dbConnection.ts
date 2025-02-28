@@ -1,27 +1,14 @@
-import { Err, ErrType } from './errors.js';
-import mysql,{ Connection } from 'mysql2';
+import mysql from 'mysql2';
+import dotenv from 'dotenv';
 
-export default class DbConnection {
-	inner: Connection;
-	
-	constructor(host: string, database: string, user: string, password: string) {
-		this.inner = mysql.createConnection({
-			host: host,
-			user: user,
-			password: password,
-			database: database
-		});
-	}
-	
-	connect(): Err | undefined {
-		this.inner.connect((err) => {
-			if(err) return {type: ErrType.MySqlConnectionFailed, content: err};
-			console.log("Connected to MySQL with ID " + this.inner.threadId);
-		});
-		return;
-	}
-	
-	query<T>(query: [string, ...args: any], fn: (err: any, results: any) => T) {
-		return this.inner.query(query[0], query[1], fn);
-	}
-}
+dotenv.config();
+
+const pool = mysql.createPool({
+    host: process.env.DB_HOST!,       
+    user: process.env.DB_USER!,     
+    password: process.env.DB_PASSWORD!, 
+    database: process.env.DB_NAME!  
+});
+
+
+export default pool;
