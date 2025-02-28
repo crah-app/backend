@@ -1,7 +1,3 @@
-import { Word } from "./word";
-import { Idx, Trick } from "./trick";
-import { TrickList } from "./trickList";
-
 // The values represent the percentages
 export enum Spot {
   Flat,
@@ -26,11 +22,7 @@ export namespace Spot {
 	
 	export function getMaximumPercentage(spots: Array<Spot>): number {
 		let max_perc: number = 0.0;
-		spots.forEach(s => {
-			if(Spot.getPercentage(s) > max_perc) {
-				max_perc = Spot.getPercentage(s);
-			}
-		});
+		spots.forEach(s => max_perc = Math.max(max_perc, Spot.getPercentage(s)));
 		
 		return max_perc;
 	}

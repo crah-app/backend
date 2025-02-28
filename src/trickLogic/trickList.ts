@@ -1,6 +1,6 @@
-import { Trick, TrickDescription, Idx } from "./trick";
-import { Rank } from "./rank";
-import { Spot } from "./spot";
+import { Trick, TrickDescription, Idx } from "./trick.js";
+import { Rank } from "./rank.js";
+import { Spot } from "./spot.js";
 
 export type TopFiveTricks = Array<Idx>;
 export type PinnedTricks = Array<Idx>;

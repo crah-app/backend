@@ -1,7 +1,7 @@
 import express from 'express';
 import { Application, Request, Response } from 'express';
 import cors from 'cors';
-import { Err, Success } from './errors';
+import { Err, Success } from './errors.js';
 
 export class App {
 	inner: Application;

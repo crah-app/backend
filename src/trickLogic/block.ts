@@ -1,5 +1,5 @@
-import { TrickPart } from './trick';
-import { Word } from './word';
+import { TrickPart } from './trick.js';
+import { Word } from './word.js';
 
 export class Block implements TrickPart {
     words: Array<Word>;

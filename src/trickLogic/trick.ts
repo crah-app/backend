@@ -1,6 +1,6 @@
-import { Block } from "./block";
-import { Word } from "./word";
-import { Spot } from "./spot";
+import { Block } from "./block.js";
+import { Word } from "./word.js";
+import { Spot } from "./spot.js";
 
 export type Idx = number;
 

@@ -1,8 +1,7 @@
-import { Err, ErrType } from './errors';
-import mysql from 'mysql';
-import { Connection, Query } from 'mysql';
+import { Err, ErrType } from './errors.js';
+import mysql,{ Connection } from 'mysql2';
 
-export class DbConnection {
+export default class DbConnection {
 	inner: Connection;
 	
 	constructor(host: string, database: string, user: string, password: string) {

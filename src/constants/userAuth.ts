@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
 import { Request, Response } from 'express';
-import { Success, Err, ErrType } from './errors';
+import { Success, Err, ErrType } from './errors.js';
 
 // https://clerk.com/docs/backend-requests/handling/manual-jwt
 
