@@ -1,11 +1,11 @@
 // The values represent the percentages
 export enum Spot {
-  Flat,
-  IntoBank,
-  DropIn,
-  Air,
-  Flyout,
-  OffLedge,
+	Flat,
+	IntoBank,
+	DropIn,
+	Air,
+	Flyout,
+	OffLedge,
 }
 
 export namespace Spot {

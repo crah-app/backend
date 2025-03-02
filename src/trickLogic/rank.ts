@@ -1,12 +1,12 @@
 // The Rank is attributed to the User based on the
 // sum of the five tricks with most points. Not the pinnedtricks
 export enum Rank {
-  Iron,
-  Bronze,
-  Silver,
-  Gold,
-  Platinum,
-  Diamond
+	Iron,
+	Bronze,
+	Silver,
+	Gold,
+	Platinum,
+	Diamond
 }
 
 export namespace Rank {

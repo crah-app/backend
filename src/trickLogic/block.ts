@@ -2,46 +2,46 @@ import { TrickPart } from './trick.js';
 import { Word } from './word.js';
 
 export class Block implements TrickPart {
-    words: Array<Word>;
-    points: number;
+	words: Array<Word>;
+	points: number;
 
-    constructor(words: Array<Word>) {
-        this.words = words;
-        let points = words[words.length-1].getPoints();
-        if (points != 0){
-            let points: number = words[words.length-1].getPoints();
+	constructor(words: Array<Word>) {
+		this.words = words;
+		let points = words[words.length-1].getPoints();
+		if (points != 0){
+			let points: number = words[words.length-1].getPoints();
 
-            let i = (words.length-1);
+			let i = (words.length-1);
 
-            for(i; i >= 0; i--) {
-                points += (words[i].percentageAfter * points);
-            }
+			for(i; i >= 0; i--) {
+				points += (words[i].percentageAfter * points);
+			}
 
-            this.points = points;
-        } else {
-            throw new Error('Block doesn\'t contain any word with points')
-        }
-    }
+			this.points = points;
+		} else {
+			throw new Error('Block doesn\'t contain any word with points')
+		}
+	}
 
-    getPercentageBefore(): number {
-        return this.words[this.words.length-1].percentageBefore;
-    }
+	getPercentageBefore(): number {
+		return this.words[this.words.length-1].percentageBefore;
+	}
 
-    getPercentageAfter(): number {
-        return 0;
-    }
+	getPercentageAfter(): number {
+		return 0;
+	}
 
-    getPoints(): number {
-        return this.points;
-    }
+	getPoints(): number {
+		return this.points;
+	}
 
-    isWord(): boolean {
-        return false;
-    }
+	isWord(): boolean {
+		return false;
+	}
 
-    isBlock(): boolean {
-        return true;
-    }
+	isBlock(): boolean {
+		return true;
+	}
 
 	containsWord(word: string): boolean {
 		this.words.forEach(p => {

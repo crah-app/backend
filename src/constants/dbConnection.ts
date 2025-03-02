@@ -1,5 +1,5 @@
 import { Err, ErrType } from './errors.js';
-import mysql,{ Connection } from 'mysql2';
+import mysql,{ Connection, Query } from 'mysql2';
 
 export default class DbConnection {
 	inner: Connection;
@@ -21,7 +21,7 @@ export default class DbConnection {
 		return;
 	}
 	
-	query<T>(query: [string, ...args: any], fn: (err: any, results: any) => T) {
-		return this.inner.query(query[0], query[1], fn);
+	query(sql: string, values: any, callback?: ((err: mysql.QueryError | null, result: mysql.QueryResult, fields: mysql.FieldPacket[]) => any) | undefined): Query {
+		return this.inner.query(sql, values, callback);
 	}
 }

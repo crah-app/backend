@@ -1,7 +1,7 @@
-import jwt from 'jsonwebtoken';
+import jwt, { Jwt } from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
 import { Request, Response } from 'express';
-import { Success, Err, ErrType } from './errors.js';
+import { Err, ErrType } from './errors.js';
 
 // https://clerk.com/docs/backend-requests/handling/manual-jwt
 
@@ -9,22 +9,32 @@ interface JWTRequest extends Request {
 	token: string | JwtPayload;
 }
 
-export async function verifyJwt(req: Request, res: Response, secret: string, next: Function): Promise<Err | Success> {
-   const token: undefined | string = req.header('Authorization')?.replace('Bearer ', '');
+export async function verifyJwt(req: Request, res: Response, secret: string, next: (userId: string, ...args: any) => Promise<Err | void>): Promise<Err | void> {
+	const token: undefined | string = req.header('Authorization')?.replace('Bearer ', '');
 
-   if (!token) return {type: ErrType.JwtTokenNotFound};
+	if (!token) return {type: ErrType.JwtTokenNotFound};
 
-   const decoded = jwt.verify(token, secret);
-   if (!(decoded as JwtPayload).iat) return {type: ErrType.JwtTokenMissingIat};
-   
-   (req as JWTRequest).token = decoded;
-   
-   const currentTime = Math.floor(Date.now() / 1000);
+	const decoded = jwt.verify(token, secret);
 
-   if ((decoded as JwtPayload).iat! < currentTime) return {type: ErrType.JwtTokenExpired};
-   console.log((decoded as JwtPayload).sub!);
-   if ((decoded as JwtPayload).sub !== undefined ) return {type: ErrType.JwtTokenMissingSub};
+	if (!(decoded as JwtPayload).exp) return { 
+		type: ErrType.JwtTokenMissingExp,
+		message: "The JwtToken is missing the exp field!"
+	};
 
-   return next(req, res, (decoded as JwtPayload).sub);
+	(req as JWTRequest).token = decoded;
+
+	const currentTime = Math.floor(Date.now() / 1000);
+
+	if ((decoded as JwtPayload).exp! < currentTime) return {
+		type: ErrType.JwtTokenExpired,
+		message: "The JwtToken has expired!"
+	};
+
+	if (!(decoded as JwtPayload).sub) return {
+		type: ErrType.JwtTokenMissingSub,
+		message: "The JwtToken is missing the sub field!"
+	};
+
+	return next(((decoded as JwtPayload).sub!));
 }
 
