@@ -6,16 +6,16 @@ import {
 } from './constants/trickListApi.js';
 import { App } from './constants/app.js';
 import DbConnection from './constants/dbConnection.js';
-import { Err } from './constants/errors.js';
 import { Response } from 'express';
 
 dotenv.config();
 
 let dbConn = new DbConnection(
 	process.env.DB_HOST!,
-	process.env.DB_NAME!,
 	process.env.DB_USER!,
 	process.env.DB_PASSWORD!,
+	process.env.DB_NAME!,
+	Number(process.env.DB_CONNECTION_LIMIT),
 );
 
 dbConn.connect();
@@ -23,7 +23,7 @@ dbConn.connect();
 let app: App = new App();
 
 function defaultNamespaceRequest(res: Response) {
-	res.send('hello world. This is the crah api.');
+	res.send(`hello world. This is the crah api. ${process.env}`);
 }
 
 app.get('/', (req, res) => {

@@ -4,12 +4,19 @@ import mysql, { Connection, Query } from 'mysql2';
 export default class DbConnection {
 	inner: Connection;
 
-	constructor(host: string, database: string, user: string, password: string) {
+	constructor(
+		host: string,
+		database: string,
+		user: string,
+		password: string,
+		limit: number,
+	) {
 		this.inner = mysql.createConnection({
 			host: host,
 			user: user,
 			password: password,
 			database: database,
+			connectionLimit: limit,
 		});
 	}
 
