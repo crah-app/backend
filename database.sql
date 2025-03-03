@@ -44,8 +44,8 @@ CREATE TABLE Posts (
 	Id INT AUTO_INCREMENT NOT NULL,
 	UserId INT NOT NULL,
 	Type enum('Article', 'Video', 'Flash', 'Music') NOT NULL,
-	Title VARCHAR(50) NULL, 
-	Description TEXT,
+	Title VARCHAR(50) NULL,
+	Description VARCHAR(600) NOT NULL,
 	CreationDate DATE NOT NULL DEFAULT CURRENT_DATE(),
 	LastEditDate DATE NOT NULL DEFAULT CURRENT_DATE(),
 	PRIMARY KEY (Id),
@@ -62,6 +62,37 @@ CREATE TABLE Likes (
 	PRIMARY KEY (Id),
 	CONSTRAINT `fk_like_post`
 		FOREIGN KEY (PostId) REFERENCES Posts (Id)
+		ON DELETE CASCADE
+		ON UPDATE RESTRICT,
+	CONSTRAINT `fk_like_user`
+		FOREIGN KEY (UserId) REFERENCES Users (Id)
+		ON DELETE CASCADE
+		ON UPDATE RESTRICT
+);
+
+CREATE TABLE Comments (
+	Id INT AUTO_INCREMENT NOT NULL,
+	PostId INT NOT NULL,
+	UserId VARCHAR(25) NOT NULL,
+	Message VARCHAR(600) NOT NULL,
+	PRIMARY KEY (Id),
+	CONSTRAINT `fk_comment_post`
+		FOREIGN KEY (PostId) REFERENCES Posts (Id)
+		ON DELETE CASCADE
+		ON UPDATE RESTRICT
+	CONSTRAINT `fk_comment_user`
+		FOREIGN KEY (UserId) REFERENCES Users (Id)
+		ON DELETE CASCADE
+		ON UPDATE RESTRICT
+);
+
+CREATE TABLE CommentsLikes (
+	Id INT AUTO_INCREMENT NOT NULL,
+	CommentId INT NOT NULL,
+	UserId INT NOT NULL,
+	PRIMARY KEY (Id),
+	CONSTRAINT `fk_like_comment`
+		FOREIGN KEY (CommentId) REFERENCES Comments (Id)
 		ON DELETE CASCADE
 		ON UPDATE RESTRICT,
 	CONSTRAINT `fk_like_user`
@@ -100,7 +131,23 @@ CREATE TABLE Tags (
 		FOREIGN KEY (PostId) REFERENCES Posts (Id)
 		ON DELETE CASCADE
 		ON UPDATE RESTRICT
-)
+);
+
+CREATE TABLE Contributions (
+	Id INT AUTO_INCREMENT NOT NULL,
+	PostId INT NOT NULL,
+	UserId INT NOT NULL,
+	Role enum('Rider', 'Graphic Designer', 'Camera Man', 'Video Editor', 'Writer', 'Helper'),
+	PRIMARY KEY (Id),
+	CONSTRAINT `fk_contribution_post`
+		FOREIGN KEY (PostId) REFERENCES Posts (Id)
+		ON DELETE CASCADE
+		ON UPDATE RESTRICT,
+	CONSTRAINT `fk_contribution_user`
+		FOREIGN KEY (UserId) REFERENCES Users (Id)
+		ON DELETE CASCADE
+		ON UPDATE RESTRICT
+);
 
 CREATE TABLE Tricks (
     Id INT AUTO_INCREMENT NOT NULL,
@@ -126,7 +173,8 @@ CREATE TABLE Spots (
     	ON UPDATE RESTRICT
 );
 
--- DIAGRAM FOR DATA STORAGE
+
+-- FILE TREE FOR DATA STORAGE
 -- /users
 --   /pfps
 --     <USER_ID>.png
@@ -159,10 +207,14 @@ INSERT INTO Emojies(Id) VALUES ("JustLandedBangers");
 INSERT INTO Emojies(Id) VALUES ("ConfusedHenke");
 INSERT INTO Emojies(Id) VALUES ("HappyHenke");
 
-INSERT INTO Posts(UserId, Type, Title, Description) VALUES (0, 'Video', "Europe: Crah 2025", "The Crah team is down to the best flat scooter tricks of the year!");
+INSERT INTO Posts(UserId, Type, Title, Description)
+	VALUES (0, 'Video', "Europe: Crah 2025", "The Crah team is down to the best flat scooter tricks of the year!");
 INSERT INTO Tags(PostId, Tag) VALUES (0, "Edit");
 INSERT INTO Tags(PostId, Tag) VALUES (0, "World's First");
-
+INSERT INTO Contributions(PostId, UserId, Role) VALUES (0, 3, 'Video Editor');
+INSERT INTO Contributions(PostId, UserId, Role) VALUES (0, 0, 'Rider');
+INSERT INTO Contributions(PostId, UserId, Role) VALUES (0, 2, 'Rider');
+	
 INSERT INTO Posts(UserId, Type, Description)
 	VALUES (0, 'Flash', "Today I got my new scooter parts: Ethic PandemoniumV2 and Longway T bars.");
 INSERT INTO Tags(PostId, Tag) VALUES (1, "Hardware");
@@ -174,6 +226,14 @@ INSERT INTO Likes(UserId, PostId) VALUES (1, 0);
 INSERT INTO Reactions(UserId, PostId, EmojiId) VALUES (0, 0, "JustLandedBangers");
 INSERT INTO Reactions(UserId, PostId, EmojiId) VALUES (0, 1, "HappyHenke");
 INSERT INTO Reactions(UserId, PostId, EmojiId) VALUES (1, 0, "ConfusedHenke");
+
+INSERT INTO Comments(UserId, PostId, Message) VALUES (0, 0, "I can't believe you actually landed that bro! That was soo insane.");
+INSERT INTO Comments(UserId, PostId, Message) VALUES (1, 0, "Finally, I've always wanted to see flat-only scooter edit with a team of riders");
+INSERT INTO Comments(UserId, PostId, Message) VALUES (2, 1, "Pandemonium is the best scooter deck");
+
+INSERT INTO CommentsLikes(UserId, CommentId) VALUES (0, 0);
+INSERT INTO CommentsLikes(UserId, CommentId) VALUES (2, 0);
+INSERT INTO CommentsLikes(UserId, CommentId) VALUES (1, 1);
 
 INSERT INTO Tricks (UserId, Name, Points) VALUES (1, "double whip", 150, "2025-01-23");
 INSERT INTO Spots (TrickId, Type) VALUES (1, 'Flat');
