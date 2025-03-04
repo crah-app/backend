@@ -13,4 +13,5 @@ export enum ErrType {
 	JwtTokenMissingSub = 401, // Unauthorized
 	JwtTokenExpired = 401, // Unauthorized
 	RequestMissingProperty = 400, // Bad Request
+	InvalidPostType = 500 // Internal Server error
 }

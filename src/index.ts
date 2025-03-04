@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
 import { getTrickList, postTrick, deleteTrick } from "./constants/tricks.js";
+import { getPost } from "./constants/posts.js";
+import { defaultNamespaceRequest } from "./constants/root.js";
 import { App } from "./constants/app.js";
 import DbConnection from "./constants/dbConnection.js";
 import { Response } from 'express';
@@ -18,9 +20,26 @@ dbConn.connect();
 
 let app: App = new App();
 
-function defaultNamespaceRequest(res: Response) {
-	res.send(`hello world. This is the crah api. ${process.env}`);
-}
+/*
+	APIS TO WORK ON
+
+	- GET TRICK LIST BY USER ID
+	- (POST) ADD TRICK
+	- (DELETE) REMOVE TRICK
+	
+	- GET POST BY POSTID
+	- GET POSTS BY USERID
+	- GET POSTS BY FILTERING OPTIONS?
+	- GET POSTS (ALL, OR BY INDEX, last 100, +100 ...)
+	- (POST) ADD POST 
+	- (DELETE) REMOVE POST
+	- (UPDATE) UPDATE POST
+	
+	- GET USERDATA
+	- (POST) CREATE NEW USER
+	- (DELETE) DELETE USER
+	- (UPLOAD) CHANGE USER DATA
+*/
 
 app.get('/api', (req, res) => {
 	return defaultNamespaceRequest(res);
@@ -54,6 +73,16 @@ curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIx
 
 app.delete('/api/tricks/remove', (req, res) => {
 	return deleteTrick(req, res, dbConn, process.env.CLERK_PEM_PUBLIC_KEY!);
+});
+
+/* 
+e.g
+
+curl https://localhost:4000/api/posts?postId=2 --output post.zip
+*/
+
+app.get('/api/posts', (req, res) => {
+	return getPost(req, res, dbConn);
 });
 
 app.listen(process.env.PORT!);
