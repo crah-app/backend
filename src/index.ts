@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { getTrickList, postTrick, deleteTrick } from "./constants/trickListApi.js";
+import { getTrickList, postTrick, deleteTrick } from "./constants/tricks.js";
 import { App } from "./constants/app.js";
 import DbConnection from "./constants/dbConnection.js";
 
@@ -39,7 +39,7 @@ app.post("/api/tricks/new", (req, res) => {
 /* 
 e.g
 
-curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNTE2MjM5MjM0NjI2MjR9._rbyL-KlSoffzaw4XXsUpnTzThu3oLWaq84QCvScjY8' --request DELETE 'http://localhost:3000/api/tricks/remove?trickid=0'
+curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNTE2MjM5MjM0NjI2MjR9._rbyL-KlSoffzaw4XXsUpnTzThu3oLWaq84QCvScjY8' --request DELETE 'http://localhost:3000/api/tricks/remove?trickId=0'
 */
 
 app.delete("/api/tricks/remove", (req, res) => {
