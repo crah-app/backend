@@ -1,18 +1,8 @@
 import dotenv from 'dotenv';
-<<<<<<< HEAD
 import { getTrickList, postTrick, deleteTrick } from "./constants/tricks.js";
 import { App } from "./constants/app.js";
 import DbConnection from "./constants/dbConnection.js";
-=======
-import {
-	getTrickList,
-	postTrick,
-	deleteTrick,
-} from './constants/trickListApi.js';
-import { App } from './constants/app.js';
-import DbConnection from './constants/dbConnection.js';
 import { Response } from 'express';
->>>>>>> 2ee6b061777d53a7c34df4ae685ce1e0cd5c6f33
 
 dotenv.config();
 

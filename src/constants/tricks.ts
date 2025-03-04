@@ -20,7 +20,10 @@ export async function getTrickList(
 			};
 
 		const query = `
-			SELECT * FROM friends;
+			SELECT Tricks.Id, Tricks.Name, Tricks.Points, Tricks.Date, Spots.Type
+			FROM Tricks
+			INNER JOIN Spots ON Tricks.Id = Spots.TrickId
+			WHERE Tricks.UserId = ?
 		`;
 
 		const trickList = await new Promise<any>((resolve, reject) => {
@@ -28,7 +31,7 @@ export async function getTrickList(
 				if (err)
 					reject({
 						type: ErrType.MySqlFailedQuery,
-						message: err.code + 'Database query failed',
+						message: err.code + ' Database query failed',
 					});
 				resolve(results);
 			});
@@ -93,7 +96,7 @@ async function postTrickHelper(
 						db.query('ROLLBACK', (err: any) => {
 							reject({
 								type: ErrType.MySqlFailedQuery,
-								message: err.stack ?? 'Error inserting trick',
+								message: 'Error inserting trick \n' + err.stack,
 							});
 						});
 						resolve(results.insertId);
@@ -116,7 +119,7 @@ async function postTrickHelper(
 						db.query('ROLLBACK', (err: any) => {
 							reject({
 								type: ErrType.MySqlFailedQuery,
-								message: err.stack ?? 'Error inserting spot',
+								message: 'Error inserting spot \n' + err.stack,
 							});
 						});
 					}
