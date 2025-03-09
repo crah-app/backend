@@ -1,0 +1,94 @@
+import archiver from 'archiver';
+import { Request, Response } from "express";
+import { Err, ErrType } from "./../constants/errors.js";
+import DbConnection from "./../constants/dbConnection.js";
+
+import dotenv from 'dotenv';
+dotenv.config();
+
+function getPostDir(type: string): Err | string {
+	switch(type) {
+		case "Article": return process.env.DIR_ARTICLES!;
+		case "Video": return process.env.DIR_VIDEOS!;
+		case "Flash": return process.env.DIR_FLASHES!;
+		case "Music": return process.env.DIR_MUSIC!;
+		default: return new Err(ErrType.InvalidPostType, "There isn't any post with this ID");
+	}
+}
+
+export async function getPost(req: Request, res: Response, db: DbConnection): Promise<Err | void> {
+
+	const postId: any | undefined = req.params.postId;
+
+	try {
+		if (!postId) return new Err(ErrType.RequestMissingProperty, "Post ID is required");
+
+		const postQuery = `SELECT * FROM Posts WHERE Posts.Id = ?`;
+		const likesQuery = `SELECT * FROM Likes WHERE Likes.PostId = ?`;
+
+		const conn = await db.connect();
+		if (conn instanceof Err) return conn;
+
+		const post = await new Promise<any>((resolve, reject) => {
+			conn.query(postQuery, postId, (err: any, results: any) => {
+				if (err) {
+					conn.release();
+					reject(new Err(
+						ErrType.MySqlFailedQuery,
+						err
+					));
+					return;
+				}
+				resolve(results);
+			})
+		});
+		
+		if (!post[0])
+			return new Err(ErrType.PostNotFound, "No post was found with the id: " + postId);
+
+		const likes = await new Promise((resolve, reject) => {
+			conn.query(likesQuery, postId, (err: any, results: any) => {
+				conn.release();
+				if (err) {
+					reject(new Err(
+						ErrType.MySqlFailedQuery,
+						err.code + "Database Query failed. Impossible to fetch the likes"
+					));
+					return;
+				}
+				resolve(results);
+			})
+		});
+
+		const DIR: Err | string = getPostDir(post[0].Type);
+		
+		// if DIR is error, propagate
+		if(typeof DIR !== 'string') return DIR;
+		
+		let data = {
+			"post": post,
+			"likes": likes,
+		};
+		
+		sendPostZipFile(res, postId, DIR as string, JSON.stringify(data));
+	} catch (err) {
+		return err as Err;
+	}
+}
+
+function sendPostZipFile(res: Response, postId: number, dir: string, data: any) {
+	const archive = archiver('zip', {
+		zlib: { level: 9 } // Sets the compression level.
+	});
+	
+	archive.pipe(res);
+	
+	const cwd = process.cwd() + '/public' + dir;
+	
+	// appends the main files and the cover
+	archive.glob(`${postId}*`, {cwd: cwd});
+	
+	archive.append(data, { name: 'metadata.json' });
+	
+	archive.finalize();
+}

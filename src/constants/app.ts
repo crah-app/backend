@@ -1,60 +1,37 @@
 import express from 'express';
-import { Application, Request, Response } from 'express';
+import { Application, Request, Response, Router } from 'express';
 import cors from 'cors';
 import { Err } from './errors.js';
 
+export interface AppDescription {
+	assetsDir: string,
+	assetsPath: string,
+	rootPath: string
+}
+
 export class App {
 	inner: Application;
+	router: Router;
 
-	constructor() {
+	constructor(desc: AppDescription) {
 		let app = express();
 		app.use(cors());
 		app.use(express.json());
-		app.use('/public', express.static('public'));
+		app.use('/${desc.assetsPath}', express.static(desc.assetsDir));
 
+		const router = express.Router();
+		app.use(desc.rootPath, router);
+		
 		this.inner = app;
+		this.router = router;
 	}
 
-	async get(
-		path: string,
-		fn: (req: Request, res: Response) => Promise<Err | void> | Err | void,
-	) {
-		this.inner.get(path, async (req, res) => {
-			let end = await fn(req, res);
-
-			if (typeof end == 'object') {
-				console.error(end);
-				res.status(end.type).send(end.message);
-			}
-		});
+	getInner(): Application {
+		return this.inner;
 	}
 
-	async post(
-		path: string,
-		fn: (req: Request, res: Response) => Promise<Err | void>,
-	) {
-		this.inner.post(path, async (req, res) => {
-			let end: Err | void = await fn(req, res);
-
-			if (typeof end === 'object') {
-				console.error(end);
-				res.status(end.type).send(end.message);
-			}
-		});
-	}
-
-	async delete(
-		path: string,
-		fn: (req: Request, res: Response) => Promise<Err | void>,
-	) {
-		this.inner.delete(path, async (req, res) => {
-			let end: Err | void = await fn(req, res);
-
-			if (typeof end == 'object') {
-				console.error(end);
-				res.status(end.type).send(end.message);
-			}
-		});
+	getRouter(): Router {
+		return this.router;
 	}
 
 	listen(port: string) {
