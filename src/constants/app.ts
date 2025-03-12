@@ -1,12 +1,11 @@
 import express from 'express';
-import { Application, Request, Response, Router } from 'express';
+import { Application, Router } from 'express';
 import cors from 'cors';
-import { Err } from './errors.js';
 
 export interface AppDescription {
-	assetsDir: string,
-	assetsPath: string,
-	rootPath: string
+	assetsDir: string;
+	assetsPath: string;
+	rootPath: string;
 }
 
 export class App {
@@ -17,11 +16,11 @@ export class App {
 		let app = express();
 		app.use(cors());
 		app.use(express.json());
-		app.use('/${desc.assetsPath}', express.static(desc.assetsDir));
+		app.use(desc.assetsPath, express.static(desc.assetsDir));
 
 		const router = express.Router();
 		app.use(desc.rootPath, router);
-		
+
 		this.inner = app;
 		this.router = router;
 	}
