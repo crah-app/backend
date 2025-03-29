@@ -6,14 +6,16 @@ import { Trick, TrickDescription } from '../trickLogic/trick.js';
 import { Spot } from '../trickLogic/spot.js';
 import { PoolConnection } from 'mysql2';
 
-export async function getTricks(req: Request, res: Response, db: DbConnection): Promise<Err | void> {
+export async function getTricks(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+): Promise<Err | void> {
 	const userId: any | undefined = req.params.userId;
 
 	try {
-		if (!userId) return new Err(
-			ErrType.RequestMissingProperty,
-			'User ID is required'
-		);
+		if (!userId)
+			return new Err(ErrType.RequestMissingProperty, 'User ID is required');
 
 		const query = `
 			SELECT Tricks.Id, Tricks.Name, Tricks.Points, Tricks.Date, Spots.Type
@@ -23,18 +25,15 @@ export async function getTricks(req: Request, res: Response, db: DbConnection): 
 		`;
 
 		let conn: PoolConnection | Err = await db.connect();
-		if(conn instanceof Err) return conn;
+		if (conn instanceof Err) return conn;
 
 		const trickList = await new Promise<any>((resolve, reject) => {
 			conn.query(query, userId, (err: any, results: any) => {
 				if (err) {
-					reject(new Err(
-						ErrType.MySqlFailedQuery,
-						err,
-					));
+					reject(new Err(ErrType.MySqlFailedQuery, err));
 					return;
 				}
-				
+
 				resolve(results);
 			});
 		});
@@ -67,11 +66,8 @@ export async function postTrick(
 	db: DbConnection,
 	secret: string,
 ): Promise<Err | void> {
-	return await verifyJwt(
-		req,
-		res,
-		secret,
-		(userId: string) => postTrickHelper(req, res, db, userId)
+	return await verifyJwt(req, res, secret, (userId: string) =>
+		postTrickHelper(req, res, db, userId),
 	);
 }
 
@@ -94,29 +90,25 @@ async function postTrickHelper(
 			INSERT INTO Tricks(UserId, Name, Points, Date)
 			VALUES (?, ?, ?, ?)
 		`;
-		
+
 		const conn: PoolConnection | Err = await db.connect();
-		if(conn instanceof Err) return conn;
+		if (conn instanceof Err) return conn;
 
 		const trickId = await new Promise<any>((resolve, reject) => {
 			conn.query('START TRANSACTION');
-			
+
 			const params = [userId, trick.getName(), trick.getPoints(), date];
-			
+
 			conn.query(query, params, (err: any, results: any) => {
-					if (err) {
-						conn.release();
-						reject(new Err(
-							ErrType.MySqlFailedQuery,
-							err
-						));
-						return;
-					}
-					resolve(results.insertId);
-				},
-			);
+				if (err) {
+					conn.release();
+					reject(new Err(ErrType.MySqlFailedQuery, err));
+					return;
+				}
+				resolve(results.insertId);
+			});
 		});
-		
+
 		const lastIteration = trick.spots.length - 1;
 
 		const spotQuery = `INSERT INTO Spots(TrickId, Type) VALUES (?, ?)`;
@@ -129,25 +121,22 @@ async function postTrickHelper(
 				conn.query(spotQuery, [trickId, spot], (err: any) => {
 					if (err) {
 						conn.query('ROLLBACK');
-						reject(new Err(
-							ErrType.MySqlFailedQuery,
-							err
-						));
+						reject(new Err(ErrType.MySqlFailedQuery, err));
 						return;
 					}
-					if(i == lastIteration) {
+					if (i == lastIteration) {
 						conn.query('COMMIT');
 					}
 					resolve();
 				});
-			})
+			});
 		}
 
 		conn.release();
 	} catch (err) {
 		return err as Err;
 	}
-	
+
 	res.status(200).send('Trick added to the trick list');
 }
 
@@ -159,10 +148,11 @@ export async function deleteTrick(
 ): Promise<Err | void> {
 	return await verifyJwt(req, res, secret, async (userId: string) => {
 		const trickId = req.params.trickId;
-		if (!trickId) return new Err(
-			ErrType.RequestMissingProperty,
-			'The request is missing the trickId',
-		);
+		if (!trickId)
+			return new Err(
+				ErrType.RequestMissingProperty,
+				'The request is missing the trickId',
+			);
 		return await deleteTrickHelper(res, db, userId, trickId!);
 	});
 }
@@ -173,7 +163,6 @@ export async function deleteTrickHelper(
 	userId: string,
 	trickId: string,
 ): Promise<Err | void> {
-	
 	const query = `
 		DELETE FROM Tricks
 		WHERE Tricks.Id=?
@@ -182,17 +171,19 @@ export async function deleteTrickHelper(
 
 	try {
 		const conn = await db.connect();
-		if(conn instanceof Err) return conn;
+		if (conn instanceof Err) return conn;
 
 		await new Promise<void>((resolve, reject) => {
 			conn.query('START TRANSACTION');
 			conn.query(query, [trickId, userId], (err: any) => {
 				if (err) {
 					conn.release();
-					reject(new Err(
-						ErrType.MySqlFailedQuery,
-						err.stack ?? 'Error deleting trick',
-					));
+					reject(
+						new Err(
+							ErrType.MySqlFailedQuery,
+							err.stack ?? 'Error deleting trick',
+						),
+					);
 					return;
 				}
 				resolve();
@@ -208,17 +199,19 @@ export async function deleteTrickHelper(
 			conn.query(spotQuery, trickId, (err: any) => {
 				if (err) {
 					conn.release();
-					conn.query("ROLLBACK");
-					reject(new Err(
-						ErrType.MySqlFailedQuery,
-						err.stack ?? 'Error deleting spots',
-					));
+					conn.query('ROLLBACK');
+					reject(
+						new Err(
+							ErrType.MySqlFailedQuery,
+							err.stack ?? 'Error deleting spots',
+						),
+					);
 				}
 				resolve();
 			});
-			conn.query("COMMIT");
+			conn.query('COMMIT');
 		});
-		
+
 		conn.release();
 	} catch (err) {
 		return err as Err;
@@ -239,16 +232,18 @@ export async function userOwnsTrick(
 
 	try {
 		const conn = await db.connect();
-		if(conn instanceof Err) return conn;
+		if (conn instanceof Err) return conn;
 
 		return await new Promise<boolean>((resolve, reject) => {
 			conn.query(query, [trickId, userId], (err: any, results: any) => {
 				conn.release();
 				if (err)
-					reject(new Err(
-						ErrType.MySqlFailedQuery,
-						err.stack ?? 'Error checking ownership of trick',
-					));
+					reject(
+						new Err(
+							ErrType.MySqlFailedQuery,
+							err.stack ?? 'Error checking ownership of trick',
+						),
+					);
 				resolve(results !== undefined);
 			});
 		});

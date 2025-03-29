@@ -21,6 +21,7 @@
 		"build": "tsc"
 	},
 	"dependencies": {
+		"@clerk/backend": "^1.25.8",
 		"archiver": "^7.0.1",
 		"cookies": "^0.9.1",
 		"cors": "^2.8.5",
