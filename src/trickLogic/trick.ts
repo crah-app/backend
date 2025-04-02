@@ -1,6 +1,6 @@
-import { Block } from "./block.js";
-import { Word } from "./word.js";
-import { Spot } from "./spot.js";
+import { Block } from './block.js';
+import { Word } from './word.js';
+import { Spot } from './spot.js';
 
 export type Idx = number;
 
@@ -54,21 +54,25 @@ export class Trick {
 		this.assertBlockFound(idxFirstBlock);
 		this.date = description.date;
 		this.spots = description.spots;
-		this.name = description.parts.join(" ");
+		this.name = description.parts.join(' ');
 		this.points = this.calculatePoints(trickParts, this.spots, idxFirstBlock);
 	}
 
 	private assertBlockFound(
 		idxFirstBlock: number | undefined,
 	): asserts idxFirstBlock is number {
-		if (typeof idxFirstBlock == "undefined") {
+		if (typeof idxFirstBlock == 'undefined') {
 			throw new Error(
-				"Trick cannot be initialized because the given Array<TrickPart> has no Blocks",
+				'Trick cannot be initialized because the given Array<TrickPart> has no Blocks',
 			);
 		}
 	}
 
-	private calculatePoints(parts: Array<TrickPart>, spots: Array<Spot>, idxFirstBlock: Idx): number {
+	private calculatePoints(
+		parts: Array<TrickPart>,
+		spots: Array<Spot>,
+		idxFirstBlock: Idx,
+	): number {
 		let points = 0;
 
 		for (let i = idxFirstBlock; i < parts.length; i++) {
@@ -95,11 +99,11 @@ export class Trick {
 	}
 
 	printToConsole(): void {
-		console.log("---------------- TRICK ----------------");
+		console.log('---------------- TRICK ----------------');
 		console.log(this.getName());
-		console.log(this.spots.map(s => Spot[s]));
-		console.log("\n    Total Points: " + this.getPoints());
-		console.log("---------------------------------------\n");
+		console.log(this.spots.map((s) => Spot[s]));
+		console.log('\n    Total Points: ' + this.getPoints());
+		console.log('---------------------------------------\n');
 	}
 
 	toTrick(): Trick {

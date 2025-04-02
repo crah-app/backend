@@ -22,7 +22,7 @@ e.g
 curl http://localhost:4000/users/stats/userId=?
 */
 
-router.get('/stats/:userId', async (req: Request, res: Response) => {
+router.get('/:userId', async (req: Request, res: Response) => {
 	errorHandler(await getUserStats(req, res), res);
 });
 
