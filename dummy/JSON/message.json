@@ -1,0 +1,31 @@
+[
+	{
+		"id": "msg_1",
+		"chatId": "chat_1",
+		"senderId": "user_2vlanCL8M2qebrHnMGQgqdfz7Wo",
+		"content": "Wer bringt morgen die Kamera mit?",
+		"type": "text",
+		"createdAt": "2025-04-14T08:00:00Z",
+		"seenBy": ["user_1", "user_3"]
+	},
+	{
+		"id": "msg_2",
+		"chatId": "chat_2",
+		"senderId": "user_3",
+		"content": "Hier ist das Video 🎥",
+		"type": "video",
+		"mediaUrl": "https://cdn.example.com/messages/video_1.mp4",
+		"createdAt": "2025-04-14T10:00:00Z",
+		"seenBy": ["user_1"]
+	},
+	{
+		"id": "msg_3",
+		"chatId": "chat_3",
+		"senderId": "user_4",
+		"content": "Neuer LUT hochgeladen!",
+		"type": "file",
+		"mediaUrl": "https://cdn.example.com/files/lut_v1.zip",
+		"createdAt": "2025-04-14T09:00:00Z",
+		"seenBy": ["user_1", "user_2vlanCL8M2qebrHnMGQgqdfz7Wo"]
+	}
+]

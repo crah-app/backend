@@ -1,0 +1,58 @@
+[
+	{
+		"id": "user_1",
+		"chatId": "chat_1",
+		"userId": "user_1",
+		"joinedAt": "2025-04-13T10:00:00Z",
+		"isAdmin": true
+	},
+	{
+		"id": "user_2vlanCL8M2qebrHnMGQgqdfz7Wo",
+		"chatId": "chat_1",
+		"userId": "user_2vlanCL8M2qebrHnMGQgqdfz7Wo",
+		"joinedAt": "2025-04-13T10:01:00Z",
+		"isAdmin": true
+	},
+	{
+		"id": "user_3",
+		"chatId": "chat_1",
+		"userId": "user_3",
+		"joinedAt": "2025-04-13T10:05:00Z",
+		"isAdmin": false
+	},
+	{
+		"id": "user_1",
+		"chatId": "chat_2",
+		"userId": "user_1",
+		"joinedAt": "2025-04-13T15:00:00Z",
+		"isAdmin": false
+	},
+	{
+		"id": "user_3",
+		"chatId": "chat_2",
+		"userId": "user_3",
+		"joinedAt": "2025-04-13T15:00:00Z",
+		"isAdmin": false
+	},
+	{
+		"id": "user_1",
+		"chatId": "chat_3",
+		"userId": "user_1",
+		"joinedAt": "2025-04-12T11:30:00Z",
+		"isAdmin": true
+	},
+	{
+		"id": "user_4",
+		"chatId": "chat_3",
+		"userId": "user_4",
+		"joinedAt": "2025-04-12T11:35:00Z",
+		"isAdmin": false
+	},
+	{
+		"id": "user_2vlanCL8M2qebrHnMGQgqdfz7Wo",
+		"chatId": "chat_3",
+		"userId": "user_2vlanCL8M2qebrHnMGQgqdfz7Wo",
+		"joinedAt": "2025-04-12T11:36:00Z",
+		"isAdmin": false
+	}
+]

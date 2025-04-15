@@ -10,7 +10,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // dummy data
-import posts from '../../dummy/JSON/posts.json' with { type: 'json' }; // ← nur für native ESM nötig (nicht mit ts-node!)
+import posts from '../../dummy/JSON/posts.json' with { type: 'json' };
 
 // const typedPosts = posts as Post[];
 

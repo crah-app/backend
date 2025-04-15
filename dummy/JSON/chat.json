@@ -1,0 +1,42 @@
+[
+	{
+		"id": "chat_1",
+		"isGroup": true,
+		"name": "Skaters Only 🛹",
+		"createdAt": "2025-04-13T10:00:00Z",
+		"updatedAt": "2025-04-14T08:00:00Z",
+		"adminIds": ["user_1", "user_2vlanCL8M2qebrHnMGQgqdfz7Wo"],
+		"lastMessage": {
+			"content": "Wer bringt morgen die Kamera mit?",
+			"senderId": "user_2vlanCL8M2qebrHnMGQgqdfz7Wo",
+			"type": "text",
+			"createdAt": "2025-04-14T08:00:00Z"
+		}
+	},
+	{
+		"id": "chat_2",
+		"isGroup": false,
+		"createdAt": "2025-04-13T15:00:00Z",
+		"updatedAt": "2025-04-14T10:00:00Z",
+		"lastMessage": {
+			"content": "Hier ist das Video 🎥",
+			"senderId": "user_3",
+			"type": "video",
+			"createdAt": "2025-04-14T10:00:00Z"
+		}
+	},
+	{
+		"id": "chat_3",
+		"isGroup": true,
+		"name": "Video Editing Crew ✂️",
+		"createdAt": "2025-04-12T11:30:00Z",
+		"updatedAt": "2025-04-14T09:00:00Z",
+		"adminIds": ["user_1"],
+		"lastMessage": {
+			"content": "Neuer LUT hochgeladen!",
+			"senderId": "user_4",
+			"type": "file",
+			"createdAt": "2025-04-14T09:00:00Z"
+		}
+	}
+]
