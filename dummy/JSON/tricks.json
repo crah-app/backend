@@ -1,0 +1,55 @@
+[
+	{
+		"Flat": [
+			{
+				"id": "1",
+				"name": "quad whip",
+				"hardness": 600
+			},
+			{
+				"id": "2",
+				"name": "fackie switch cr triple whip",
+				"hardness": 700
+			},
+			{
+				"id": "3",
+				"name": "buttercup whip",
+				"hardness": 750
+			}
+		],
+		"Park": [
+			{
+				"id": "1",
+				"name": "quad whip",
+				"hardness": 600
+			},
+			{
+				"id": "2",
+				"name": "fackie switch cr triple whip",
+				"hardness": 700
+			},
+			{
+				"id": "3",
+				"name": "buttercup whip",
+				"hardness": 750
+			},
+			{
+				"id": "4",
+				"name": "fingerblast",
+				"hardness": 500
+			},
+			{
+				"id": "5",
+				"name": "summer flip",
+				"hardness": 1000
+			}
+		],
+		"Street": [
+			{
+				"id": "1",
+				"name": "quad whip",
+				"hardness": 600
+			}
+		]
+	}
+]

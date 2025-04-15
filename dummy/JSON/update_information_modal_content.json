@@ -1,0 +1,49 @@
+[
+  {
+    "version": "1.15",
+    "stack_title": "Update 1.15",
+    "type": "title",
+    "header": "What's new in version 1.15?",
+    "showContent": true,
+    "content": "2025-02-11"
+  },
+  {
+    "type": "subtitle",
+    "header": "New Features",
+    "showContent": true,
+    "content": [
+      "Added a new leaderboard system showcasing top-ranked users globally.",
+      "Introduced dark mode customization with new theme options.",
+      "Now you can share your stunt scooter achievements directly to social media."
+    ]
+  },
+  {
+    "type": "subtitle",
+    "header": "Improvements",
+    "showContent": true,
+    "content": [
+      "Enhanced chat performance with faster message delivery.",
+      "Optimized friend request system for quicker responses.",
+      "Updated user profile interface for a cleaner look."
+    ]
+  },
+  {
+    "type": "subtitle",
+    "header": "Bug Fixes",
+    "showContent": true,
+    "content": [
+      "Resolved issues causing occasional app crashes when viewing profiles.",
+      "Fixed notification badge not updating properly after reading messages.",
+      "Corrected ranking calculations to ensure fair user placements."
+    ]
+  },
+  {
+    "type": "subtitle",
+    "header": "Coming Soon",
+    "showContent": true,
+    "content": [
+      "Introducing in-app events with exclusive rewards.",
+      "New trick tutorials section for beginners and pros alike."
+    ]
+  }
+]

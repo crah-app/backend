@@ -1,0 +1,80 @@
+[
+  {
+    "title": "Enjoying Crah?",
+    "data": [
+      {
+        "text": "Join the Discord",
+        "icon": "logo-discord",
+        "type": "ordinary",
+        "svg": false,
+        "hasIcon": true
+      },
+      {
+        "text": "Send Feedback",
+        "icon": "send-outline",
+        "type": "ordinary",
+        "svg": false,
+        "hasIcon": true
+      }
+    ]
+  },
+  {
+    "title": "Your Stats",
+    "data": [
+      {
+        "text": "Your Tricks",
+        "icon": "CostumSVGIcon",
+        "type": "ordinary",
+        "svg": true,
+        "hasIcon": true
+      },
+      {
+        "text": "User Info",
+        "icon": "person-outline",
+        "type": "ordinary",
+        "svg": false,
+        "hasIcon": true
+      }
+    ]
+  },
+  {
+    "title": "Account",
+    "data": [
+      {
+        "text": "Edit Profile",
+        "icon": "create-outline",
+        "type": "ordinary",
+        "svg": false,
+        "hasIcon": true
+      },
+      {
+        "text": "Change Language",
+        "icon": "language-outline",
+        "type": "ordinary",
+        "svg": false,
+        "hasIcon": true
+      },
+      {
+        "text": "Change Password",
+        "icon": "lock-closed-outline",
+        "type": "ordinary",
+        "svg": false,
+        "hasIcon": true
+      },
+      {
+        "text": "Delete Account",
+        "icon": "trash-outline",
+        "type": "ordinary",
+        "svg": false,
+        "hasIcon": true
+      },
+      {
+        "text": "Sign Out",
+        "icon": "trash-outline",
+        "type": "unordinary",
+        "svg": false,
+        "hasIcon": false
+      }
+    ]
+  }
+]

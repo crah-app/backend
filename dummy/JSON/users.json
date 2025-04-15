@@ -1,0 +1,21 @@
+{
+  "id": "user_001",
+  "username": "scooterPro99",
+  "full_name": "Max Mustermann",
+  "rank": "Gold",
+  "rank_number": 3,
+  "best_park_tricks": [
+    "Backflip",
+    "Tailwhip",
+    "Barspin",
+    "Flair",
+    "Double Tailwhip"
+  ],
+  "best_flat_tricks": [
+    "Manual",
+    "Bunny Hop",
+    "Footjam",
+    "No Hander",
+    "Whip Rewind"
+  ]
+}

@@ -1,0 +1,145 @@
+[
+	{
+		"_id": 1,
+		"text": "Hey, bist du morgen im Skatepark?",
+		"createdAt": "2024-02-04 12:00:00",
+		"user": {
+			"_id": 2,
+			"name": "Lukas Weber",
+			"avatar": "https://randomuser.me/api/portraits/men/41.jpg",
+			"status": "online"
+		}
+	},
+	{
+		"_id": 2,
+		"text": "Ja, bin da! Lass ein paar Tricks filmen.",
+		"createdAt": "2024-02-04 11:55:00",
+		"user": {
+			"_id": 1,
+			"name": "Felix Schmidt",
+			"avatar": "https://randomuser.me/api/portraits/men/32.jpg",
+			"status": "2024-02-04 11:30:00"
+		}
+	},
+	{
+		"_id": 3,
+		"text": "Perfekt, bis morgen!",
+		"createdAt": "2024-02-04 11:50:00",
+		"user": {
+			"_id": 3,
+			"name": "Jonas Müller",
+			"avatar": "https://randomuser.me/api/portraits/men/46.jpg",
+			"status": "online"
+		}
+	},
+	{
+		"_id": 4,
+		"text": "Hey, bist du morgen im Skatepark?",
+		"createdAt": "2024-02-04 12:00:00",
+		"user": {
+			"_id": 4,
+			"name": "Sebastian Koch",
+			"avatar": "https://randomuser.me/api/portraits/men/47.jpg",
+			"status": "online"
+		}
+	},
+	{
+		"_id": 5,
+		"text": "Ja, bin da! Lass ein paar Tricks filmen.",
+		"createdAt": "2024-02-04 11:55:00",
+		"user": {
+			"_id": 5,
+			"name": "Marcel Fischer",
+			"avatar": "https://randomuser.me/api/portraits/men/48.jpg",
+			"status": "2024-02-04 11:30:00"
+		}
+	},
+	{
+		"_id": 6,
+		"text": "Perfekt, bis morgen!",
+		"createdAt": "2024-02-04 11:50:00",
+		"user": {
+			"_id": 6,
+			"name": "Daniel Lehmann",
+			"avatar": "https://randomuser.me/api/portraits/men/49.jpg",
+			"status": "online"
+		}
+	},
+	{
+		"_id": 7,
+		"text": "Hey, bist du morgen im Skatepark?",
+		"createdAt": "2024-02-04 12:00:00",
+		"user": {
+			"_id": 7,
+			"name": "Patrick Hoffmann",
+			"avatar": "https://randomuser.me/api/portraits/men/50.jpg",
+			"status": "online"
+		}
+	},
+	{
+		"_id": 8,
+		"text": "Ja, bin da! Lass ein paar Tricks filmen.",
+		"createdAt": "2024-02-04 11:55:00",
+		"user": {
+			"_id": 8,
+			"name": "Kevin Richter",
+			"avatar": "https://randomuser.me/api/portraits/men/51.jpg",
+			"status": "2024-02-04 11:30:00"
+		}
+	},
+	{
+		"_id": 9,
+		"text": "Perfekt, bis morgen!",
+		"createdAt": "2024-02-04 11:50:00",
+		"user": {
+			"_id": 9,
+			"name": "Nico Wagner",
+			"avatar": "https://randomuser.me/api/portraits/men/52.jpg",
+			"status": "online"
+		}
+	},
+	{
+		"_id": 10,
+		"text": "Hey, bist du morgen im Skatepark?",
+		"createdAt": "2024-02-04 12:00:00",
+		"user": {
+			"_id": 10,
+			"name": "Tobias Braun",
+			"avatar": "https://randomuser.me/api/portraits/men/53.jpg",
+			"status": "online"
+		}
+	},
+	{
+		"_id": 11,
+		"text": "Ja, bin da! Lass ein paar Tricks filmen.",
+		"createdAt": "2024-02-04 11:55:00",
+		"user": {
+			"_id": 11,
+			"name": "Florian Becker",
+			"avatar": "https://randomuser.me/api/portraits/men/54.jpg",
+			"status": "2024-02-04 11:30:00"
+		}
+	},
+	{
+		"_id": 12,
+		"text": "Perfekt, bis morgen!",
+		"createdAt": "2024-02-04 11:50:00",
+		"user": {
+			"_id": 12,
+			"name": "Stefan Meier",
+			"avatar": "https://randomuser.me/api/portraits/men/55.jpg",
+			"status": "online"
+		}
+	},
+	{
+		"_id": 13,
+		"text": "Perfekt, bis morgen!",
+		"createdAt": "2024-02-04 11:50:00",
+		"user": {
+			"_id": 13,
+			"name": "Stefan Meier",
+			"avatar": "https://randomuser.me/api/portraits/men/55.jpg",
+			"status": "online"
+		}
+	}
+]

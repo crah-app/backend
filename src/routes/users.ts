@@ -9,7 +9,7 @@ const router = express.Router({ mergeParams: true });
 /* 
 e.g
 
-curl http://localhost:4000/users/all
+curl http://localhost:4000/api/users/all
 */
 
 router.get('/all', async (req: Request, res: Response) => {
@@ -19,7 +19,7 @@ router.get('/all', async (req: Request, res: Response) => {
 /* 
 e.g
 
-curl http://localhost:4000/users/stats/userId=?
+curl http://localhost:4000/api/users/1
 */
 
 router.get('/:userId', async (req: Request, res: Response) => {
