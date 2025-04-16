@@ -1,0 +1,18 @@
+{
+	"editor.formatOnSave": true, // Formatierte Dateien bei jedem Speichern
+	"editor.defaultFormatter": "esbenp.prettier-vscode", // Prettier als Standard-Formatter
+	"files.autoSave": "onWindowChange", // Automatisches Speichern von Dateien
+	"javascript.format.enable": false, // Deaktiviert die eingebaute JS-Formatierung
+	"typescript.format.enable": false, // Deaktiviert die eingebaute TS-Formatierung
+	"prettier.singleQuote": true, // Verwende einfache Anführungszeichen statt doppelte
+	"prettier.bracketSameLine": true, // Schließt das JSX-Schließzeichen in eine neue Zeile ein
+	"editor.formatOnPaste": true, // Formatiere beim Einfügen von Code
+	"prettier.printWidth": 80, // Maximale Zeilenlänge
+	"prettier.bracketSpacing": true,
+	"prettier.arrowParens": "always",
+	"prettier.trailingComma": "all",
+	"prettier.semi": true,
+	"prettier.tabWidth": 2,
+	"prettier.useTabs": true,
+	"svg.preview.background": "editor"
+}

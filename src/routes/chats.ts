@@ -23,6 +23,6 @@ get messages of the chat
  
 */
 
-router.get('/messages/:chatId', async (req: Request, res: Response) => {
+router.get('/messages/:chatId/:userId', async (req: Request, res: Response) => {
 	errorHandler(await getMessagesFromChat(req, res, dbConnection), res);
 });

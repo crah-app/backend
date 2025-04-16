@@ -6,7 +6,8 @@ USE crah;
 CREATE TABLE Users (
     Id VARCHAR(255) NOT NULL,
     Name VARCHAR(100) NOT NULL,
-    PRIMARY KEY (Id)
+    PRIMARY KEY (Id),
+    lastActiveAt DATETIME DEFAULT NULL,
 );
 
 -- FRIENDS
@@ -257,7 +258,8 @@ INSERT INTO Chats (Id, IsGroup, Name, CreatedAt, UpdatedAt)
 VALUES 
 ('chat_1', TRUE, 'Skaters Only 🛹', '2025-04-13 10:00:00', '2025-04-14 08:00:00'),
 ('chat_2', FALSE, NULL, '2025-04-13 15:00:00', '2025-04-14 10:00:00'),
-('chat_3', TRUE, 'Video Editing Crew ✂️', '2025-04-12 11:30:00', '2025-04-14 09:00:00');
+('chat_3', TRUE, 'Video Editing Crew ✂️', '2025-04-12 11:30:00', '2025-04-14 09:00:00'),
+('chat_4', FALSE, NULL, '2025-04-12 11:30:00', '2025-04-14 09:00:00');
 
 
 INSERT INTO ChatMembers (ChatId, UserId, JoinedAt, IsAdmin)
@@ -274,14 +276,20 @@ VALUES
 -- chat_3
 ('chat_3', 'user_1', '2025-04-12 11:30:00', TRUE),
 ('chat_3', 'user_4', '2025-04-12 11:35:00', FALSE),
-('chat_3', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '2025-04-12 11:36:00', FALSE);
+('chat_3', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '2025-04-12 11:36:00', FALSE),
+
+-- chat_4
+('chat_4', 'user_4', '2025-04-12 11:35:00', FALSE),
+('chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '2025-04-12 11:36:00', FALSE);
 
 
 INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`, sent, received, pending, quickReplies, createdAt)
 VALUES
 ('msg_1', 'chat_1', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'Wer bringt morgen die Kamera mit?', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 08:00:00'),
 ('msg_2', 'chat_2', 'user_3', 'Hier ist das Video 🎥', NULL, 'https://cdn.example.com/messages/video_1.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
-('msg_3', 'chat_3', 'user_4', 'Neuer LUT hochgeladen!', 'https://cdn.example.com/files/lut_v1.zip', NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00');
+('msg_3', 'chat_3', 'user_4', 'Neuer LUT hochgeladen!', 'https://cdn.example.com/files/lut_v1.zip', NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00'),
+
+('msg_4', 'chat_4', 'user_4', 'Hier ist das unser neuer chat', NULL, 'https://www.youtube.com/watch?v=UTjwyDuVjRM&t=225s', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00');
 
 
 INSERT INTO MessageSeen (MessageId, UserId, SeenAt)
