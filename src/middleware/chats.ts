@@ -49,7 +49,9 @@ export async function getChatsFromUser(
                 ) m2 ON m1.ChatId = m2.ChatId AND m1.createdAt = m2.maxDate
             ) m ON m.ChatId = c.Id
             WHERE cm.UserId = ?
-            ORDER BY m.createdAt DESC;
+            ORDER BY 
+                m.createdAt IS NULL, 
+                m.createdAt ASC;
         `
 
         let conn: PoolConnection | Err = await db.connect();
