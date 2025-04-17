@@ -7,7 +7,7 @@ CREATE TABLE Users (
     Id VARCHAR(255) NOT NULL,
     Name VARCHAR(100) NOT NULL,
     PRIMARY KEY (Id),
-    lastActiveAt DATETIME DEFAULT NULL,
+    lastActiveAt DATETIME DEFAULT NULL
 );
 
 -- FRIENDS
@@ -289,7 +289,11 @@ VALUES
 ('msg_2', 'chat_2', 'user_3', 'Hier ist das Video 🎥', NULL, 'https://cdn.example.com/messages/video_1.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
 ('msg_3', 'chat_3', 'user_4', 'Neuer LUT hochgeladen!', 'https://cdn.example.com/files/lut_v1.zip', NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00'),
 
-('msg_4', 'chat_4', 'user_4', 'Hier ist das unser neuer chat', NULL, 'https://www.youtube.com/watch?v=UTjwyDuVjRM&t=225s', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00');
+('msg_4', 'chat_4', 'user_4', 'Hier ist das unser neuer chat', NULL, 'https://www.youtube.com/watch?v=UTjwyDuVjRM&t=225s', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
+('msg_5', 'chat_4', 'user_4', 'alright2', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4
+', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 10:00:00'),
+('msg_6', 'chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'alright', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4
+', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 11:00:01');
 
 
 INSERT INTO MessageSeen (MessageId, UserId, SeenAt)
