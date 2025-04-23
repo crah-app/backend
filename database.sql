@@ -15,8 +15,18 @@ CREATE TABLE Friends (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     UserAId VARCHAR(255) NOT NULL,
     UserBId VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_friend_a_user FOREIGN KEY (UserAId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT fk_friend_b_user FOREIGN KEY (UserBId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    CONSTRAINT fk_friend_a__user FOREIGN KEY (UserAId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_friend_b__user FOREIGN KEY (UserBId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+-- FRIENDSHIP REQUESTS
+CREATE TABLE FriendshipRequests (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    FromUserId VARCHAR(255) NOT NULL,
+    ToUserId VARCHAR(255) NOT NULL,
+    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_from_user__user FOREIGN KEY (FromUserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_to_user__user FOREIGN KEY (ToUserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- FOLLOWS
@@ -24,20 +34,36 @@ CREATE TABLE Follows (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     FollowerId VARCHAR(255) NOT NULL,
     FollowedId VARCHAR(255) NOT NULL,
+    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_follower FOREIGN KEY (FollowerId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT fk_followed FOREIGN KEY (FollowedId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
+
+
 
 -- POSTS
 CREATE TABLE Posts (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     UserId VARCHAR(255) NOT NULL,
-    Type ENUM('Article', 'Video', 'Flash', 'Music') NOT NULL,
+    Type ENUM('Article', 'Video', 'Post', 'Music') NOT NULL,
     Title VARCHAR(100),
     Description TEXT NOT NULL,
-    CreationDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    LastEditDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_post_user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    Content TEXT,   -- markdown article
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_post__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT chk_content_article CHECK (Type = 'Article' OR Content IS NULL)
+);
+
+-- POSTS REPORTS
+CREATE TABLE PostReports (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    UserId VARCHAR(255) NOT NULL,
+    PostId INT NOT NULL,
+    Reason VARCHAR(600) NOT NULL,
+    IsClosed BOOLEAN DEFAULT FALSE,
+    CONSTRAINT fk_posts_reports__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_posts_reports__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- LIKES
@@ -45,8 +71,8 @@ CREATE TABLE Likes (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     PostId INT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_like_post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT fk_like_user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    CONSTRAINT fk_like__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_like__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- COMMENTS
@@ -55,18 +81,20 @@ CREATE TABLE Comments (
     PostId INT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
     Message VARCHAR(600) NOT NULL,
-    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_comment_post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT fk_comment_user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_comment__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_comment__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- COMMENTS LIKES
-CREATE TABLE CommentsLikes (
+CREATE TABLE CommentLikes (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     CommentId INT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_like_comment FOREIGN KEY (CommentId) REFERENCES Comments(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT fk_like_comment_user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    Timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_comment_like__comment FOREIGN KEY (CommentId) REFERENCES Comments(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_comment_like__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- EMOJIES
@@ -80,9 +108,10 @@ CREATE TABLE Reactions (
     PostId INT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
     EmojiId VARCHAR(15) NOT NULL,
-    CONSTRAINT fk_reaction_post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT fk_reaction_user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT fk_reaction_emoji FOREIGN KEY (EmojiId) REFERENCES Emojies(Id) ON DELETE RESTRICT ON UPDATE RESTRICT
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_reaction__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_reaction__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_reaction__emoji FOREIGN KEY (EmojiId) REFERENCES Emojies(Id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 -- TAGS
@@ -90,7 +119,17 @@ CREATE TABLE Tags (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     PostId INT NOT NULL,
     Tag VARCHAR(50) NOT NULL,
-    CONSTRAINT fk_tag_post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    CONSTRAINT fk_tag__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+-- PARTECIPANTS
+CREATE TABLE Partecipants (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    PostId INT NOT NULL,
+    UserId VARCHAR(255) NOT NULL,
+    Role ENUM('Rider', 'Graphic Designer', 'Camera Man', 'Video Editor', 'Writer', 'Helper') NOT NULL,
+    CONSTRAINT fk_partecipant__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_partecipant__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- CONTRIBUTIONS
@@ -98,9 +137,65 @@ CREATE TABLE Contributions (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     PostId INT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
-    Role ENUM('Rider', 'Graphic Designer', 'Camera Man', 'Video Editor', 'Writer', 'Helper') NOT NULL,
-    CONSTRAINT fk_contribution_post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT fk_contribution_user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    Title VARCHAR(100) NOT NULL,
+    Text TEXT NOT NULL,
+    IsClosed BOOLEAN DEFAULT FALSE,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contribution__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_contribution__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+-- CONTRIBUTIONS LIKES
+CREATE TABLE ContributionLikes (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ContributionId INT NOT NULL,
+    UserId VARCHAR(255) NOT NULL,
+    Timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contribution_like__contribution FOREIGN KEY (ContributionId) REFERENCES Contributions(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_contribution_like__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+-- CONTRIBUTIONS DISLIKES
+CREATE TABLE ContributionDislikes (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ContributionId INT NOT NULL,
+    UserId VARCHAR(255) NOT NULL,
+    Timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contribution_dislike__contribution FOREIGN KEY (ContributionId) REFERENCES Contributions(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_contribution_dislike__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+-- CONTRIBUTIONS COMMENTS
+CREATE TABLE ContributionComments (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ContributionId INT NOT NULL,
+    UserId VARCHAR(255) NOT NULL,
+    Message VARCHAR(600) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contribution_comment__contribution FOREIGN KEY (ContributionId) REFERENCES Contributions(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_contribution_comment__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+-- CONTRIBUTION COMMENTS LIKES
+CREATE TABLE ContributionCommentLikes (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ContributionCommentId INT NOT NULL,
+    UserId VARCHAR(255) NOT NULL,
+    Timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contribution_comment_like__contribution_comment FOREIGN KEY (ContributionCommentId) REFERENCES ContributionComments(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_contribution_comment_like__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+-- COMMENTS DISLIKES
+CREATE TABLE ContributionCommentDislikes (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ContributionCommentId INT NOT NULL,
+    UserId VARCHAR(255) NOT NULL,
+    Timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contribution_comment_dislike__contribution_comment FOREIGN KEY (ContributionCommentId) REFERENCES ContributionComments(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_contribution_comment_dislike__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- TRICKS
@@ -110,7 +205,7 @@ CREATE TABLE Tricks (
     Name VARCHAR(100) NOT NULL,
     Points INT NOT NULL,
     Date DATE,
-    CONSTRAINT fk_trick_user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    CONSTRAINT fk_trick__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- SPOTS
@@ -118,7 +213,7 @@ CREATE TABLE Spots (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     TrickId INT NOT NULL,
     Spot ENUM('Flat', 'OffLedge', 'DropIn', 'Flyout', 'Air') NOT NULL,
-    CONSTRAINT fk_spot_trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    CONSTRAINT fk_spot__trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- CHATS
@@ -174,19 +269,6 @@ CREATE TABLE MessageSeen (
     INDEX idx_user_id (UserId)
 );
 
-
--- FILE TREE (Info)
--- /users
---   /pfps/<USER_ID>.png
---   /banners/<USER_ID>.png
--- /posts
---   /articles/<POST_ID>.md
---   /videos/<POST_ID>.mp4
---   /music/<POST_ID>.mp3
---   /covers/<POST_ID>.png
-
--- https://mariadb.com/kb/en/foreign-keys/
-
 INSERT INTO Users (Id, Name) VALUES
 ('user_1', 'John Doe'),
 ('user_2', 'Jane Smith'),
@@ -208,7 +290,7 @@ INSERT INTO Follows (FollowerId, FollowedId) VALUES
 INSERT INTO Posts (UserId, Type, Title, Description) VALUES
 ('user_1', 'Article', 'My First Article', 'This is the content of the article.'),
 ('user_2', 'Video', 'Cool Skateboarding Trick', 'Watch this amazing skateboard trick!'),
-('user_3', 'Flash', 'Short Flash Post', 'Just a quick post!'),
+('user_3', 'Post', 'Short Flash Post', 'Just a quick post!'),
 ('user_4', 'Music', 'My New Song', 'Listen to my latest music creation!');
 
 INSERT INTO Likes (PostId, UserId) VALUES
@@ -221,7 +303,7 @@ INSERT INTO Comments (PostId, UserId, Message) VALUES
 (2, 'user_4', 'Amazing trick!'),
 (3, 'user_1', 'Nice post!');
 
-INSERT INTO CommentsLikes (CommentId, UserId) VALUES
+INSERT INTO CommentLikes (CommentId, UserId) VALUES
 (1, 'user_3'),
 (2, 'user_1');
 
@@ -241,7 +323,7 @@ INSERT INTO Tags (PostId, Tag) VALUES
 (3, 'fun'),
 (4, 'music');
 
-INSERT INTO Contributions (PostId, UserId, Role) VALUES
+INSERT INTO Partecipants (PostId, UserId, Role) VALUES
 (1, 'user_2', 'Writer'),
 (2, 'user_3', 'Graphic Designer'),
 (3, 'user_4', 'Camera Man');
