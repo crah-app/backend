@@ -6,6 +6,10 @@ import { PoolConnection } from 'mysql2';
 
 import { getLinkPreview } from 'link-preview-js';
 
+import { v4 as uuidv4 } from 'uuid';
+
+import { Message } from '../types/chats.js';
+
 export async function getChatsFromUser(
 	req: Request,
 	res: Response,
@@ -233,5 +237,133 @@ export async function getChatUrlMediaPreview(
 		res.json(data);
 	} catch (err) {
 		return err as Err;
+	}
+}
+
+export async function startNewchat(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const { senderId, receiverId } = req.body;
+
+	if (!senderId || !receiverId)
+		return res
+			.status(400)
+			.json({ error: 'senderId and receiverId are required' });
+
+	try {
+		const conn = await db.connect();
+		if (conn instanceof Err) throw conn;
+
+		// check wether chat between them already exists
+		const [existingChat] = await conn.promise().query(
+			`
+			SELECT c.Id FROM Chats c
+			JOIN ChatMembers cm1 ON cm1.ChatId = c.Id AND cm1.UserId = ?
+			JOIN ChatMembers cm2 ON cm2.ChatId = c.Id AND cm2.UserId = ?
+			WHERE c.IsGroup = FALSE
+		`,
+			[senderId, receiverId],
+		);
+
+		if (Array.isArray(existingChat) && existingChat.length > 0) {
+			// @ts-ignore
+			const existingChatId = existingChat[0].Id;
+			conn.release();
+			return res.json({ chatId: existingChatId, existing: true });
+		}
+
+		// create new chat
+		const chatId = uuidv4();
+
+		await conn
+			.promise()
+			.query(`INSERT INTO Chats (Id, IsGroup) VALUES (?, FALSE)`, [chatId]);
+
+		await conn
+			.promise()
+			.query(`INSERT INTO ChatMembers (ChatId, UserId) VALUES (?, ?), (?, ?)`, [
+				chatId,
+				senderId,
+				chatId,
+				receiverId,
+			]);
+
+		conn.release();
+		return res.status(201).json({ chatId, existing: false });
+	} catch (error) {
+		console.error('Error creating chat:', error);
+		return res.status(500).json({ error: 'Failed to create chat' });
+	}
+}
+
+export async function postMessageToDB(message: any, db: DbConnection) {
+	const {
+		_id = message[0]._id,
+		ChatId,
+		SenderId = message[0].user._id,
+		text = message[0].text,
+		image = null,
+		video = null,
+		audio = null,
+		system = false,
+		sent = null,
+		received = null,
+		pending = false,
+		quickReplies = null,
+		createdAt = new Date(message[0].createdAt),
+		type = 'text',
+		trickId = null,
+		riderId = null,
+	} = message;
+
+	console.log(ChatId, SenderId);
+
+	if (!ChatId || !SenderId) {
+		return new Err(
+			ErrType.RequestMissingProperty,
+			'chatId and senderId are required',
+		);
+	}
+
+	let conn = await db.connect();
+	if (conn instanceof Err) return conn;
+
+	const insertQuery = `
+	INSERT INTO Messages (
+		_id, ChatId, SenderId, text, image, video, audio,
+		\`system\`, sent, received, pending, quickReplies,
+		createdAt, type, trickId, riderId
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `;
+
+	const values = [
+		_id,
+		ChatId,
+		SenderId,
+		text || null,
+		image,
+		video,
+		audio,
+		system,
+		sent ?? true, // fallback true, when send false is
+		received ?? false, // fallback false
+		pending,
+		quickReplies ? JSON.stringify(quickReplies) : null,
+		createdAt,
+		type,
+		trickId,
+		riderId,
+	];
+
+	try {
+		await conn.promise().query(insertQuery, values);
+		conn.release();
+
+		return { ...message, _id, createdAt, sent: true };
+	} catch (err) {
+		conn.release();
+		return new Err(ErrType.MySqlFailedQuery, err);
 	}
 }

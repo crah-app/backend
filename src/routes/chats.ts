@@ -5,6 +5,7 @@ import {
 	getChatsFromUser,
 	getChatUrlMediaPreview,
 	getMessagesFromChat,
+	startNewchat,
 } from '../middleware/chats.js';
 import { dbConnection } from '../constants/dbConnection.js';
 import cors from 'cors';
@@ -41,4 +42,14 @@ get the link preview of an url
 
 router.post('/link-preview', async (req: Request, res: Response) => {
 	errorHandler(await getChatUrlMediaPreview(req, res, dbConnection), res);
+});
+
+/**
+
+	new chat
+ 
+*/
+
+router.post('/new', async (req: Request, res: Response) => {
+	errorHandler(await startNewchat(req, res, dbConnection), res);
 });
