@@ -145,23 +145,27 @@ CREATE TABLE ChatMembers (
 
 -- MESSAGES (based an IMessage)
 CREATE TABLE Messages (
-    _id VARCHAR(36) PRIMARY KEY,                -- geändert von Id auf _id
+    _id VARCHAR(36) PRIMARY KEY,                   -- geändert von Id auf _id
     ChatId VARCHAR(36) NOT NULL,
     SenderId VARCHAR(255) NOT NULL,
-    text TEXT,                                  -- 'Content' wird zu 'text'
-    image TEXT,                                 -- hinzugefügt für Bild
-    video TEXT,                                 -- hinzugefügt für Video
-    audio TEXT,                                 -- hinzugefügt für Audio
-    `system` BOOLEAN DEFAULT FALSE,             -- geändert: 'system' in Backticks gesetzt
-    sent BOOLEAN DEFAULT FALSE,                 -- hinzugefügt für sent (optional)
-    received BOOLEAN DEFAULT FALSE,             -- hinzugefügt für received (optional)
-    pending BOOLEAN DEFAULT FALSE,              -- hinzugefügt für pending (optional)
-    quickReplies JSON,                          -- hinzugefügt für quickReplies (optional)
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 'CreatedAt' bleibt gleich
+    text TEXT,                                     -- 'Content' wird zu 'text'
+    image TEXT,                                    -- hinzugefügt für Bild
+    video TEXT,                                    -- hinzugefügt für Video
+    audio TEXT,                                    -- hinzugefügt für Audio
+    `system` BOOLEAN DEFAULT FALSE,                -- Backticks statt doppelte Anführungszeichen
+    sent BOOLEAN DEFAULT FALSE,                    -- hinzugefügt für sent
+    received BOOLEAN DEFAULT FALSE,                -- hinzugefügt für received
+    pending BOOLEAN DEFAULT FALSE,                 -- hinzugefügt für pending
+    quickReplies JSON,                             -- hinzugefügt für quickReplies
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,  -- Timestamp
+    `type` ENUM('text', 'rider', 'trick') DEFAULT 'text', -- korrekte ENUM-Syntax
+    trickId INT DEFAULT NULL,                   -- TrickId hinzugefügt
+    riderId VARCHAR(255) DEFAULT NULL,          -- RiderId hinzugefügt
     FOREIGN KEY (ChatId) REFERENCES Chats(Id) ON DELETE CASCADE,
     FOREIGN KEY (SenderId) REFERENCES Users(Id) ON DELETE CASCADE,
     INDEX idx_chat_id_created_at (ChatId, createdAt)
 );
+
 
 -- MESSAGE SEEN
 CREATE TABLE MessageSeen (
@@ -286,14 +290,21 @@ VALUES
 INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`, sent, received, pending, quickReplies, createdAt)
 VALUES
 ('msg_1', 'chat_1', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'Wer bringt morgen die Kamera mit?', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 08:00:00'),
-('msg_2', 'chat_2', 'user_3', 'Hier ist das Video 🎥', NULL, 'https://cdn.example.com/messages/video_1.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
-('msg_3', 'chat_3', 'user_4', 'Neuer LUT hochgeladen!', 'https://cdn.example.com/files/lut_v1.zip', NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00'),
+('msg_2', 'chat_2', 'user_3', 'Hier ist das Video 🎥', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
+('msg_3', 'chat_3', 'user_4', 'Neuer LUT hochgeladen!', 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00'),
 
 ('msg_4', 'chat_4', 'user_4', 'Hier ist das unser neuer chat', NULL, 'https://www.youtube.com/watch?v=UTjwyDuVjRM&t=225s', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
-('msg_5', 'chat_4', 'user_4', 'alright2', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4
-', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 10:00:00'),
+('msg_5', 'chat_4', 'user_4', 'alright2', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 10:00:00'),
 ('msg_6', 'chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'alright', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4
-', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 11:00:01');
+', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-15 11:00:01');
+
+INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`, sent, received, pending, quickReplies, createdAt, `type`, riderId)
+VALUES
+('msg_7', 'chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 11:00:01', "rider", "user_4");
+
+INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`, sent, received, pending, quickReplies, createdAt, `type`, trickId)
+VALUES
+('msg_8', 'chat_4', 'user_4', '', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-18 11:00:01', "trick", 1);
 
 
 INSERT INTO MessageSeen (MessageId, UserId, SeenAt)

@@ -251,3 +251,37 @@ export async function userOwnsTrick(
 		return err as Err;
 	}
 }
+
+// get trick
+export async function getTrick(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+): Promise<Err | void> {
+	const trickId = req.params.trickId;
+
+	const query = `
+		SELECT * FROM Tricks
+		WHERE Id = ?;
+	`;
+
+	try {
+		let conn: PoolConnection | Err = await db.connect();
+		if (conn instanceof Err) return conn;
+
+		const trick = await new Promise<void>((resolve, reject) => {
+			conn.query(query, [trickId], (err: any, results: any) => {
+				if (err) {
+					reject(new Err(ErrType.MySqlFailedQuery, err));
+					return;
+				}
+				resolve(results);
+			});
+		});
+
+		conn.release();
+		res.json(trick);
+	} catch (err) {
+		return err as Err;
+	}
+}

@@ -36,6 +36,7 @@ export async function getChatsFromUser(
             m.text AS LastMessageContent,
             m.SenderId AS LastMessageSenderId,
             m.createdAt AS LastMessageDate,
+            m.type AS LastMessageType,
 
             COALESCE((
                 SELECT COUNT(*)
@@ -157,7 +158,10 @@ FROM (
         NULL AS audio,
         NULL AS video,
         NULL AS image,
-        NULL AS _id
+        NULL AS _id,
+        NULL AS "type",
+        NULL AS trickId,
+        NULL AS riderId
 
     FROM Chats c
     WHERE c.Id = ?
@@ -186,12 +190,15 @@ FROM (
         m.audio AS audio,
         m.video AS video,
         m.image AS image,
-        m._id AS _id
+        m._id AS _id,
+        m.type AS "type",
+        m.trickId AS trickId,
+        m.riderId AS riderId
     FROM Messages m
     JOIN Users u ON m.SenderId = u.Id
     WHERE m.ChatId = ?
 ) AS combined
-ORDER BY createdAt ASC;
+ORDER BY createdAt DESC;
 `;
 
 		let conn: PoolConnection | Err = await db.connect();

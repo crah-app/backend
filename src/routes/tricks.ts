@@ -1,5 +1,10 @@
 import express from 'express';
-import { getTricks, deleteTrick, postTrick } from '../middleware/tricks.js';
+import {
+	getTricks,
+	deleteTrick,
+	postTrick,
+	getTrick,
+} from '../middleware/tricks.js';
 import { errorHandler, Err } from '../constants/errors.js';
 import { dbConnection } from '../constants/dbConnection.js';
 
@@ -23,6 +28,10 @@ curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIx
 
 router.delete('/:trickId', async (req, res) => {
 	errorHandler(await deleteTrick(req, res, dbConnection, secret), res);
+});
+
+router.get('/:trickId', async (req, res) => {
+	errorHandler(await getTrick(req, res, dbConnection), res);
 });
 
 /*
