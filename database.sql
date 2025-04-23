@@ -277,34 +277,34 @@ INSERT INTO Users (Id, Name) VALUES
 ('user_1', 'John Doe'),
 ('user_2', 'Jane Smith'),
 ('user_3', 'Mike Johnson'),
-('user_4', 'Emily Davis'),
+('user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'CaneAnatra'),
 ('user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'josef_bbc');
 
 
 INSERT INTO Friends (UserAId, UserBId) VALUES
 ('user_1', 'user_2'),
 ('user_2', 'user_3'),
-('user_3', 'user_4');
+('user_3', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1');
 
 INSERT INTO Follows (FollowerId, FollowedId) VALUES
 ('user_1', 'user_3'),
-('user_2', 'user_4'),
+('user_2', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1'),
 ('user_3', 'user_1');
 
 INSERT INTO Posts (UserId, Type, Title, Description) VALUES
 ('user_1', 'Article', 'My First Article', 'This is the content of the article.'),
 ('user_2', 'Video', 'Cool Skateboarding Trick', 'Watch this amazing skateboard trick!'),
 ('user_3', 'Post', 'Short Flash Post', 'Just a quick post!'),
-('user_4', 'Music', 'My New Song', 'Listen to my latest music creation!');
+('user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Music', 'My New Song', 'Listen to my latest music creation!');
 
 INSERT INTO Likes (PostId, UserId) VALUES
 (1, 'user_2'),
 (2, 'user_3'),
-(3, 'user_4');
+(3, 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1');
 
 INSERT INTO Comments (PostId, UserId, Message) VALUES
 (1, 'user_2', 'Great article!'),
-(2, 'user_4', 'Amazing trick!'),
+(2, 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Amazing trick!'),
 (3, 'user_1', 'Nice post!');
 
 INSERT INTO CommentLikes (CommentId, UserId) VALUES
@@ -330,7 +330,7 @@ INSERT INTO Tags (PostId, Tag) VALUES
 INSERT INTO Partecipants (PostId, UserId, Role) VALUES
 (1, 'user_2', 'Writer'),
 (2, 'user_3', 'Graphic Designer'),
-(3, 'user_4', 'Camera Man');
+(3, 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Camera Man');
 
 INSERT INTO Tricks (UserId, Name, Points, Date) VALUES
 ('user_1', 'Ollie', 10, '2025-04-14'),
@@ -361,11 +361,11 @@ VALUES
 
 -- chat_3
 ('chat_3', 'user_1', '2025-04-12 11:30:00', TRUE),
-('chat_3', 'user_4', '2025-04-12 11:35:00', FALSE),
+('chat_3', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', '2025-04-12 11:35:00', FALSE),
 ('chat_3', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '2025-04-12 11:36:00', FALSE),
 
 -- chat_4
-('chat_4', 'user_4', '2025-04-12 11:35:00', FALSE),
+('chat_4', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', '2025-04-12 11:35:00', FALSE),
 ('chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '2025-04-12 11:36:00', FALSE);
 
 
@@ -373,20 +373,20 @@ INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`
 VALUES
 ('msg_1', 'chat_1', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'Wer bringt morgen die Kamera mit?', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 08:00:00'),
 ('msg_2', 'chat_2', 'user_3', 'Hier ist das Video 🎥', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
-('msg_3', 'chat_3', 'user_4', 'Neuer LUT hochgeladen!', 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00'),
+('msg_3', 'chat_3', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Neuer LUT hochgeladen!', 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00'),
 
-('msg_4', 'chat_4', 'user_4', 'Hier ist das unser neuer chat', NULL, 'https://www.youtube.com/watch?v=UTjwyDuVjRM&t=225s', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
-('msg_5', 'chat_4', 'user_4', 'alright2', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 10:00:00'),
+('msg_4', 'chat_4', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Hier ist das unser neuer chat', NULL, 'https://www.youtube.com/watch?v=UTjwyDuVjRM&t=225s', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00'),
+('msg_5', 'chat_4', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'alright2', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 10:00:00'),
 ('msg_6', 'chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'alright', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4
 ', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-15 11:00:01');
 
 INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`, sent, received, pending, quickReplies, createdAt, `type`, riderId)
 VALUES
-('msg_7', 'chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 11:00:01', "rider", "user_4");
+('msg_7', 'chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 11:00:01', "rider", "user_2w8KalaMAlwDDEa7tTV3pV8Dte1");
 
 INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`, sent, received, pending, quickReplies, createdAt, `type`, trickId)
 VALUES
-('msg_8', 'chat_4', 'user_4', '', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-18 11:00:01', "trick", 1);
+('msg_8', 'chat_4', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', '', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-18 11:00:01', "trick", 1);
 
 
 INSERT INTO MessageSeen (MessageId, UserId, SeenAt)
