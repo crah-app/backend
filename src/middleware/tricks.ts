@@ -97,21 +97,12 @@ async function postTrickHelper(
 
 		const description = new TrickDescription(parts, spots);
 
-		console.log(allTricksData?.defaultPoints);
-
 		// The trick builder is going to use them if they aren't undefined, if not it is going
 		// to build the trick from scratch
-		let trick: Trick;
-		
-		if(allTricksData != undefined) {
-			trick = new Trick(description, allTricksData);
-		} else trick = new Trick(description);
-		
-		console.log(trick.points);
-		console.log(trick.defaultPoints);
+		let trick: Trick = new Trick(description, allTricksData);
 
 		// In this case it is missing from AllTricks
-		if (allTricksData == undefined) {
+		if (!allTricksData) {
 			await addTrickToAllTricks(conn, trick.name, {
 				defaultPoints: trick.defaultPoints,
 				types: trick.types
@@ -141,7 +132,7 @@ async function postTrickHelper(
 
 		const lastIteration = trick.spots.length - 1;
 
-		const spotQuery = `INSERT INTO Spots(TrickId, Type, Date) VALUES (?, ?, ?)`;
+		const spotQuery = `INSERT INTO Spots(TrickId, Spot, Date) VALUES (?, ?, ?)`;
 
 		for (let i = 0; i < trick.spots.length; i++) {
 			// js enums start from 0, but sql enums start at 1 to point to a variant
@@ -194,8 +185,8 @@ export async function getDataFromAllTricks(
 			});
 		});
 
-
-		return data;
+		if (data.defaultPoints == undefined) return undefined;
+		return data as AllTricksData;
 	} catch (err) {
 		return err as Err;
 	}
@@ -229,7 +220,11 @@ export async function addTrickToAllTricks(
 			INSERT INTO TrickTypes(AllTricksName, Type) VALUES (?, ?)
 		`;
 
-		for (let trickType in allTricksData.types) {
+		for (let tType of allTricksData.types) {
+	
+			// js enums start from 0 but mysql enums start from 1
+			let trickType = tType + 1;
+
 			await new Promise<any>((resolve, reject) => {
 				conn.query(queryTrickTypes, [trickName, trickType], (err: any, results: any) => {
 					if (err) {
