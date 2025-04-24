@@ -16,7 +16,7 @@ export default router;
 router
 	.route('/')
 	/* 
-	curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNTE2OTIzOTAyMn0.TEHZNVRuzcIBnxqrVbaxcLiPfV3IFtHynsV7tWQTAEU' -H 'Content-Type: application/json' --data '{"parts": ["fakie", "quad", "whip"], "spots": [0, 3, 4], "date": null}' --request POST 'http://localhost:3000/api/tricks'
+	curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNTE2OTIzOTAyMn0.TEHZNVRuzcIBnxqrVbaxcLiPfV3IFtHynsV7tWQTAEU' -H 'Content-Type: application/json' --data '{"parts": ["fakie", "quad", "whip"], "spots": [[0, '2025-03-01'], [3, null], [4, null]]}' --request POST 'http://localhost:3000/api/tricks'
 	*/
 	.post(async (req, res) => {
 		errorHandler(await postTrick(req, res, dbConnection, secret), res);

@@ -72,12 +72,12 @@ export class TrickList {
 	}
 
 	private sortByDateDisCriterion(a: Trick, b: Trick): number {
-		if(a.date ?? new Date("0000-01-01") > (b.date ?? new Date("0000-01-01"))) return -1;
+		if(a.getOldestDate() ?? new Date("0000-01-01") > (b.getOldestDate() ?? new Date("0000-01-01"))) return -1;
 		return 1;
 	}
 
 	private sortByDateAscCriterion(a: Trick, b: Trick): number {
-		if(a.date ?? new Date("0000-01-01") > (b.date ?? new Date("0000-01-01"))) return 1;
+		if(a.getLatestDate() ?? new Date("0000-01-01") > (b.getLatestDate() ?? new Date("0000-01-01"))) return 1;
 		return -1;
 	}
 

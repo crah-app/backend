@@ -39,8 +39,6 @@ CREATE TABLE Follows (
     CONSTRAINT fk_followed FOREIGN KEY (FollowedId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
-
-
 -- POSTS
 CREATE TABLE Posts (
     Id INT AUTO_INCREMENT PRIMARY KEY,
@@ -198,14 +196,26 @@ CREATE TABLE ContributionCommentDislikes (
     CONSTRAINT fk_contribution_comment_dislike__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
+-- ALL TRICKS
+CREATE TABLE AllTricks (
+    Name VARCHAR(100) NOT NULL PRIMARY KEY,
+    DefaultPoints INT NOT NULL, -- points without the percentage increase of the spot
+);
+
+CREATE TABLE TrickTypes (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    AllTricksName VARCHAR(100) NOT NULL PRIMARY KEY,
+    Type ENUM('Balance', 'Rewind', 'Overhead', 'Grab'),
+    CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT,
+);
+
 -- TRICKS
 CREATE TABLE Tricks (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     UserId VARCHAR(255) NOT NULL,
     Name VARCHAR(100) NOT NULL,
     Points INT NOT NULL,
-    Date DATE,
-    CONSTRAINT fk_trick__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    CONSTRAINT fk_trick__all_trick FOREIGN KEY (Name) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- SPOTS
@@ -213,6 +223,7 @@ CREATE TABLE Spots (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     TrickId INT NOT NULL,
     Spot ENUM('Flat', 'OffLedge', 'DropIn', 'Flyout', 'Air') NOT NULL,
+    Date DATE,
     CONSTRAINT fk_spot__trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
@@ -332,13 +343,18 @@ INSERT INTO Partecipants (PostId, UserId, Role) VALUES
 (2, 'user_3', 'Graphic Designer'),
 (3, 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Camera Man');
 
-INSERT INTO Tricks (UserId, Name, Points, Date) VALUES
-('user_1', 'Ollie', 10, '2025-04-14'),
-('user_2', 'Kickflip', 20, '2025-04-15');
+INSERT INTO AllTricks (Name, DefaultPoints, Type) VALUES
+('Kickless bar', 300, 'Rewind'),
+('Bri flip', 200, 'Overhead');
 
-INSERT INTO Spots (TrickId, Spot) VALUES
-(1, 'Flat'),
-(2, 'OffLedge');
+INSERT INTO Tricks (UserId, Name, Points) VALUES
+('user_1', 'Kickless bar', 390),
+('user_2', 'Bri flip', 180);
+
+INSERT INTO Spots (TrickId, Spot, Date) VALUES
+(1, 'Flat', '2025-03-15'),
+(1, 'OffLedge', '2023-02-11'),
+(2, 'DropIn', '2021-08-18');
 
 INSERT INTO Chats (Id, IsGroup, Name, CreatedAt, UpdatedAt)
 VALUES 
