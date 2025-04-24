@@ -35,7 +35,7 @@ export class Trick {
 		this.name = description.parts.join(" ");
 		this.spots = description.spots;
 		
-		if (allTricksData) {
+		if (allTricksData !== undefined) {
 			this.defaultPoints = allTricksData.defaultPoints;
 			this.points = allTricksData.defaultPoints + allTricksData.defaultPoints * Spot.getMaximumPercentage(description.spots);	
 			return;

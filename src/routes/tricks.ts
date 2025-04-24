@@ -16,7 +16,7 @@ export default router;
 router
 	.route('/')
 	/* 
-	curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNTE2OTIzOTAyMn0.TEHZNVRuzcIBnxqrVbaxcLiPfV3IFtHynsV7tWQTAEU' -H 'Content-Type: application/json' --data '{"parts": ["fakie", "quad", "whip"], "spots": [[0, '2025-03-01'], [3, null], [4, null]]}' --request POST 'http://localhost:3000/api/tricks'
+	curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjkwMjMyMTMzMTJ9.4aSibw17HQ5J0ehcQUnCkjYtEjdhFoz7R2G5YEIlrRs' -H 'Content-Type: application/json' --data '{"parts": ["fakie", "quad", "whip"], "spots": [{"spot": 0, "date":"2025-03-01"}, {"spot":3, "date":null}, {"spot":4, "date": null}]}' --request POST 'http://localhost:4000/api/tricks'
 	*/
 	.post(async (req, res) => {
 		errorHandler(await postTrick(req, res, dbConnection, secret), res);
@@ -37,6 +37,7 @@ router.get('/:trickId', async (req, res) => {
 /*
 curl http://localhost:3000/api/tricks?userId=1
 */
+
 router.get('/:userId', async (req, res) => {
 	errorHandler(await getTricks(req, res, dbConnection), res);
 });

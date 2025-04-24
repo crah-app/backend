@@ -199,14 +199,14 @@ CREATE TABLE ContributionCommentDislikes (
 -- ALL TRICKS
 CREATE TABLE AllTricks (
     Name VARCHAR(100) NOT NULL PRIMARY KEY,
-    DefaultPoints INT NOT NULL, -- points without the percentage increase of the spot
+    DefaultPoints INT NOT NULL -- points without the percentage increase of the spot
 );
 
 CREATE TABLE TrickTypes (
     Id INT AUTO_INCREMENT PRIMARY KEY,
-    AllTricksName VARCHAR(100) NOT NULL PRIMARY KEY,
+    AllTricksName VARCHAR(100) NOT NULL,
     Type ENUM('Balance', 'Rewind', 'Overhead', 'Grab'),
-    CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
 -- TRICKS
@@ -343,9 +343,13 @@ INSERT INTO Partecipants (PostId, UserId, Role) VALUES
 (2, 'user_3', 'Graphic Designer'),
 (3, 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Camera Man');
 
-INSERT INTO AllTricks (Name, DefaultPoints, Type) VALUES
-('Kickless bar', 300, 'Rewind'),
-('Bri flip', 200, 'Overhead');
+INSERT INTO AllTricks (Name, DefaultPoints) VALUES
+('Kickless bar', 300),
+('Bri flip', 200);
+
+INSERT INTO TrickTypes (AllTricksName, Type) VALUES
+('Kickless bar', 'Rewind'),
+('Bri flip', 'Overhead');
 
 INSERT INTO Tricks (UserId, Name, Points) VALUES
 ('user_1', 'Kickless bar', 390),

@@ -5,6 +5,7 @@ import { verifyJwt } from './auth.js';
 import { Trick, TrickDescription, TrickType } from '../trickLogic/trick.js';
 import { Spot } from '../trickLogic/spot.js';
 import { Pool, PoolConnection } from 'mysql2';
+import { AllowlistIdentifier } from '@clerk/backend';
 
 export interface AllTricksData {
 	defaultPoints: number,
@@ -90,19 +91,31 @@ async function postTrickHelper(
 		if (conn instanceof Err) return conn;
 
 		// First, check if we already calculated the defaultPoints in AllTricks
-		let allTricksData = await getDataFromAllTricks(conn, name);
+		let allTricksData: Err | AllTricksData | undefined = await getDataFromAllTricks(conn, name);
 
 		if (allTricksData instanceof Err) return allTricksData as Err;
 
 		const description = new TrickDescription(parts, spots);
 
+		console.log(allTricksData?.defaultPoints);
+
 		// The trick builder is going to use them if they aren't undefined, if not it is going
 		// to build the trick from scratch
-		const trick: Trick = new Trick(description, allTricksData);
+		let trick: Trick;
+		
+		if(allTricksData != undefined) {
+			trick = new Trick(description, allTricksData);
+		} else trick = new Trick(description);
+		
+		console.log(trick.points);
+		console.log(trick.defaultPoints);
 
 		// In this case it is missing from AllTricks
-		if (allTricksData !== undefined) {
-			await addTrickToAllTricks(conn, trick.name, allTricksData);
+		if (allTricksData == undefined) {
+			await addTrickToAllTricks(conn, trick.name, {
+				defaultPoints: trick.defaultPoints,
+				types: trick.types
+			});
 		}
 		
 		// SQL query to insert the trick to the database
@@ -180,6 +193,7 @@ export async function getDataFromAllTricks(
 				resolve(results);
 			});
 		});
+
 
 		return data;
 	} catch (err) {
