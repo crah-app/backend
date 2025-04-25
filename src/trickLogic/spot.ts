@@ -20,10 +20,9 @@ export namespace Spot {
 		}
 	}
 	
-	export function getMaximumPercentage(spots: Array<Spot>): number {
+	export function getMaximumPercentage(spots: Array<{spot:Spot, date?: Date}>): number {
 		let max_perc: number = 0.0;
-		spots.forEach(s => max_perc = Math.max(max_perc, Spot.getPercentage(s)));
-		
+		spots.forEach(s => max_perc = Math.max(max_perc, Spot.getPercentage(s.spot)));
 		return max_perc;
 	}
 }

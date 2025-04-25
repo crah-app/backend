@@ -1,4 +1,4 @@
-import { TrickPart } from './trick.js';
+import { TrickPart, TrickType } from './trick.js';
 import list = require("./../../public/tricks/words.json");
 
 export class Word implements TrickPart {
@@ -8,6 +8,7 @@ export class Word implements TrickPart {
 	percentageAfter: number = 0;
 	connect: boolean = false;
 	applyToWhole: boolean = false;
+	type?: TrickType;
 
 	constructor(word: string) {
 		this.word = word;
@@ -19,6 +20,7 @@ export class Word implements TrickPart {
 				this.percentageBefore = w.percentageBefore ?? 0; 
 				this.connect = w.connect ?? false;
 				this.applyToWhole = w.applyToWhole ?? false;
+				if (w.type) this.type = TrickType[w.type as keyof typeof TrickType];
 				return;
 			}
 		}

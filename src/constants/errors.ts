@@ -41,7 +41,7 @@ export enum ErrType {
 	JwtTokenExpired,
 	RequestMissingProperty,
 	InvalidPostType,
-	PostNotFound,
+	PostNotFound
 }
 
 export namespace ErrType {
