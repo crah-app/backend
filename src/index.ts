@@ -12,6 +12,11 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { postMessageToDB } from './middleware/chats.js';
 import { dbConnection } from './constants/dbConnection.js';
 
+import redis from 'redis';
+import { Err } from './constants/errors.js';
+
+const redisClient = redis.createClient();
+
 // 1. Init Express wrapper
 let app: App = new App({
 	assetsDir: 'public',
@@ -39,15 +44,23 @@ await subClient.connect();
 
 io.adapter(createAdapter(pubClient, subClient));
 
+interface isTypingInterface {
+	[chatId: string]: {
+		[userId: string]: boolean;
+	};
+}
+
 // 5. Handle Socket.IO events
+let typingUsers: isTypingInterface = {}; // Store typing status in memory
+
 io.on('connection', (socket) => {
 	console.log('User connected:', socket.id);
 
-	// chat logic
-	socket.on('join-chat', ({ chatId, userId }) => {
+	socket.on('join-chat', ({ chatId, userId }, callback) => {
 		if (!chatId || !userId) return;
 
 		socket.join(chatId);
+		callback();
 		console.log(`User ${userId} joined chat ${chatId}`);
 	});
 
@@ -64,7 +77,33 @@ io.on('connection', (socket) => {
 			return;
 		}
 
-		socket.to(chatId).emit('recieve-message', msg);
+		socket.to(chatId).emit('recieve-message', { chatId, msg });
+	});
+
+	socket.on('message-seen', async ({ chatId, userId, isInChat }) => {
+		console.log('message seen ycxycyxyxcycxcycyxc', chatId, userId, isInChat);
+		// io.to(chatId).emit('message-seen', chatId);
+
+		if (!isInChat) return;
+
+		const conn = await dbConnection.connect();
+		if (conn instanceof Err) return;
+
+		const insertSeenQuery = `
+    INSERT IGNORE INTO MessageSeen (MessageId, UserId, SeenAt)
+    SELECT _id, ?, NOW()
+    FROM Messages
+    WHERE ChatId = ?
+      AND SenderId != ?
+      AND _id NOT IN (
+          SELECT MessageId FROM MessageSeen WHERE UserId = ?
+      )
+  `;
+
+		await conn
+			.promise()
+			.query(insertSeenQuery, [userId, chatId, userId, userId]);
+		conn.release();
 	});
 
 	socket.on('leave-chat', ({ chatId, userId }) => {
@@ -72,8 +111,42 @@ io.on('connection', (socket) => {
 		console.log(`User ${userId} left chat ${chatId}`);
 	});
 
+	socket.on(
+		'user-typing',
+		({
+			chatId,
+			userId,
+			isTyping,
+		}: {
+			chatId: string;
+			userId: string;
+			isTyping: boolean;
+		}) => {
+			if (!typingUsers[chatId]) {
+				typingUsers[chatId] = {};
+			}
+
+			typingUsers[chatId][userId] = isTyping;
+
+			// send event to all others
+			io.to(chatId).emit('user-typing', { chatId, userId, isTyping });
+		},
+	);
+
 	socket.on('disconnect', () => {
 		console.log('User disconnected:', socket.id);
+
+		// Clean up typing status on disconnect
+		for (const chatId in typingUsers) {
+			for (const userId in typingUsers[chatId]) {
+				if (userId === socket.id) {
+					delete typingUsers[chatId][userId];
+				}
+			}
+			if (Object.keys(typingUsers[chatId]).length === 0) {
+				delete typingUsers[chatId];
+			}
+		}
 	});
 });
 

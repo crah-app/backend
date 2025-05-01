@@ -8,10 +8,13 @@ import { Pool, PoolConnection } from 'mysql2';
 import { AllowlistIdentifier } from '@clerk/backend';
 
 export interface AllTricksData {
-	defaultPoints: number,
-	types: TrickType[]
+	defaultPoints: number;
+	types: TrickType[];
 }
 
+/* 
+	Get all tricks from user
+*/
 export async function getTricks(
 	req: Request,
 	res: Response,
@@ -65,6 +68,9 @@ export async function getTricks(
 	}
 }
 
+/*
+	User tries to create new trick
+*/
 export async function postTrick(
 	req: Request,
 	res: Response,
@@ -72,18 +78,18 @@ export async function postTrick(
 	secret: string,
 ): Promise<Err | void> {
 	return await verifyJwt(req, res, secret, (userId: string) =>
-		postTrickHelper(req, res, db, userId)
+		handlePostTrick(req, res, db, userId),
 	);
 }
 
-async function postTrickHelper(
+async function handlePostTrick(
 	req: Request,
 	res: Response,
 	db: DbConnection,
 	userId: string,
 ): Promise<void | Err> {
 	const parts: Array<string> = req.body.parts;
-	const spots: Array<{spot: Spot, date?: Date}> = req.body.spots;
+	const spots: Array<{ spot: Spot; date?: Date }> = req.body.spots;
 
 	const name = parts.join(' ');
 	try {
@@ -91,7 +97,10 @@ async function postTrickHelper(
 		if (conn instanceof Err) return conn;
 
 		// First, check if we already calculated the defaultPoints in AllTricks
-		let allTricksData: Err | AllTricksData | undefined = await getDataFromAllTricks(conn, name);
+		let allTricksData: Err | AllTricksData | undefined = await getTrickData(
+			conn,
+			name,
+		);
 
 		if (allTricksData instanceof Err) return allTricksData as Err;
 
@@ -105,10 +114,10 @@ async function postTrickHelper(
 		if (!allTricksData) {
 			await addTrickToAllTricks(conn, trick.name, {
 				defaultPoints: trick.defaultPoints,
-				types: trick.types
+				types: trick.types,
 			});
 		}
-		
+
 		// SQL query to insert the trick to the database
 		const query = `
 			INSERT INTO Tricks(UserId, Name, Points)
@@ -139,17 +148,21 @@ async function postTrickHelper(
 			const spot = trick.spots[i].spot + 1;
 
 			await new Promise<void>((resolve, reject) => {
-				conn.query(spotQuery, [trickId, spot, trick.spots[i].date], (err: any) => {
-					if (err) {
-						conn.query('ROLLBACK');
-						reject(new Err(ErrType.MySqlFailedQuery, err));
-						return;
-					}
-					if (i == lastIteration) {
-						conn.query('COMMIT');
-					}
-					resolve();
-				});
+				conn.query(
+					spotQuery,
+					[trickId, spot, trick.spots[i].date],
+					(err: any) => {
+						if (err) {
+							conn.query('ROLLBACK');
+							reject(new Err(ErrType.MySqlFailedQuery, err));
+							return;
+						}
+						if (i == lastIteration) {
+							conn.query('COMMIT');
+						}
+						resolve();
+					},
+				);
 			});
 		}
 
@@ -161,9 +174,9 @@ async function postTrickHelper(
 	res.status(200).send('Trick added to the trick list');
 }
 
-export async function getDataFromAllTricks(
+export async function getTrickData(
 	conn: PoolConnection,
-	trickName: string
+	trickName: string,
 ): Promise<Err | AllTricksData | undefined> {
 	try {
 		// SQL query to get default points and types of the trick
@@ -192,10 +205,13 @@ export async function getDataFromAllTricks(
 	}
 }
 
+/* 
+	Add costum trick to the "AllTricks" table
+*/
 export async function addTrickToAllTricks(
 	conn: PoolConnection,
 	trickName: string,
-	allTricksData: AllTricksData
+	allTricksData: AllTricksData,
 ): Promise<Err | void> {
 	try {
 		// SQL query to get default points
@@ -206,14 +222,18 @@ export async function addTrickToAllTricks(
 		`;
 
 		await new Promise<any>((resolve, reject) => {
-			conn.query(queryAllTricks, [trickName, allTricksData.defaultPoints], (err: any, results: any) => {
-				if (err) {
-					conn.release();
-					reject(new Err(ErrType.MySqlFailedQuery, err));
-					return;
-				}
-				resolve(results);
-			});
+			conn.query(
+				queryAllTricks,
+				[trickName, allTricksData.defaultPoints],
+				(err: any, results: any) => {
+					if (err) {
+						conn.release();
+						reject(new Err(ErrType.MySqlFailedQuery, err));
+						return;
+					}
+					resolve(results);
+				},
+			);
 		});
 
 		const queryTrickTypes = `
@@ -221,30 +241,36 @@ export async function addTrickToAllTricks(
 		`;
 
 		for (let tType of allTricksData.types) {
-	
 			// js enums start from 0 but mysql enums start from 1
 			let trickType = tType + 1;
 
 			await new Promise<any>((resolve, reject) => {
-				conn.query(queryTrickTypes, [trickName, trickType], (err: any, results: any) => {
-					if (err) {
-						conn.query('ROLLBACK');
-						conn.release();
-						reject(new Err(ErrType.MySqlFailedQuery, err));
-						return;
-					}
+				conn.query(
+					queryTrickTypes,
+					[trickName, trickType],
+					(err: any, results: any) => {
+						if (err) {
+							conn.query('ROLLBACK');
+							conn.release();
+							reject(new Err(ErrType.MySqlFailedQuery, err));
+							return;
+						}
 
-					resolve(results);
-				});
+						resolve(results);
+					},
+				);
 			});
 		}
-		
+
 		conn.query('COMMIT');
 	} catch (err) {
 		return err as Err;
 	}
 }
 
+/*
+	Try to delete a trick
+*/
 export async function deleteTrick(
 	req: Request,
 	res: Response,
@@ -258,11 +284,11 @@ export async function deleteTrick(
 				ErrType.RequestMissingProperty,
 				'The request is missing the trickId',
 			);
-		return await deleteTrickHelper(res, db, userId, trickId!);
+		return await HandleDeleteTrick(res, db, userId, trickId!);
 	});
 }
 
-export async function deleteTrickHelper(
+export async function HandleDeleteTrick(
 	res: Response,
 	db: DbConnection,
 	userId: string,
@@ -324,6 +350,9 @@ export async function deleteTrickHelper(
 	res.status(200).send('Trick deleted from the trick list');
 }
 
+/*
+	returns boolean wether user landed the trick
+*/
 export async function userOwnsTrick(
 	db: DbConnection,
 	userId: string,
@@ -366,7 +395,7 @@ export async function getTrick(
 	const trickId = req.params.trickId;
 
 	const query = `
-		SELECT * FROM Tricks
+		SELECT * FROM AllTricks
 		WHERE Id = ?;
 	`;
 
