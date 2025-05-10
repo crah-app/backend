@@ -21,6 +21,8 @@
 		"build": "tsc"
 	},
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.806.0",
+		"@aws-sdk/s3-request-presigner": "^3.806.0",
 		"@clerk/backend": "^1.25.8",
 		"@socket.io/redis-adapter": "^8.3.0",
 		"archiver": "^7.0.1",

@@ -24,61 +24,62 @@ export async function getChatsFromUser(
 			return new Err(ErrType.RequestMissingProperty, 'User ID is required');
 
 		const query = `
-            SELECT 
-            c.Id,
-            c.IsGroup,
-            CASE 
-                WHEN c.IsGroup = FALSE THEN (
+    SELECT 
+        c.Id,
+        c.IsGroup,
+        c.CreatedAt AS ChatCreatedAt, 
+
+        CASE 
+            WHEN c.IsGroup = FALSE THEN (
                 SELECT u.Name
                 FROM ChatMembers cm2
                 JOIN Users u ON u.Id = cm2.UserId
                 WHERE cm2.ChatId = c.Id AND cm2.UserId != ?
                 LIMIT 1
-                )
-                ELSE c.Name
-            END AS Name,
-            
-            -- restliche Felder
-            m.text AS LastMessageContent,
-            m.SenderId AS LastMessageSenderId,
-            m.createdAt AS LastMessageDate,
-            m.type AS LastMessageType,
+            )
+            ELSE c.Name
+        END AS Name,
 
-            COALESCE((
-                SELECT COUNT(*)
-                FROM Messages msg
-                LEFT JOIN MessageSeen ms 
-                    ON ms.MessageId = msg._id AND ms.UserId = ?
-                WHERE msg.ChatId = c.Id 
-                AND msg.SenderId != ?
-                AND ms.MessageId IS NULL
-            ), 0) AS UnreadCount
+        m.text AS LastMessageContent,
+        m.SenderId AS LastMessageSenderId,
+        m.createdAt AS LastMessageDate,
+        m.type AS LastMessageType,
 
-            FROM Chats c
-            JOIN ChatMembers cm ON cm.ChatId = c.Id
+        COALESCE((
+            SELECT COUNT(*)
+            FROM Messages msg
+            LEFT JOIN MessageSeen ms 
+                ON ms.MessageId = msg._id AND ms.UserId = ?
+            WHERE msg.ChatId = c.Id 
+            AND msg.SenderId != ?
+            AND ms.MessageId IS NULL
+        ), 0) AS UnreadCount
 
-            -- letzte Nachricht pro Chat
-            LEFT JOIN (
-                SELECT m1.*
-                FROM Messages m1
-                INNER JOIN (
-                    SELECT ChatId, MAX(createdAt) AS maxDate
-                    FROM Messages
-                    GROUP BY ChatId
-                ) m2 ON m1.ChatId = m2.ChatId AND m1.createdAt = m2.maxDate
-                WHERE m1._id = (
-                    SELECT MAX(_id)
-                    FROM Messages m3
-                    WHERE m3.ChatId = m1.ChatId AND m3.createdAt = m1.createdAt
-                )
-            ) m ON m.ChatId = c.Id
+    FROM Chats c
+    JOIN ChatMembers cm ON cm.ChatId = c.Id
 
-            WHERE cm.UserId = ?
+    -- letzte Nachricht pro Chat
+    LEFT JOIN (
+        SELECT m1.*
+        FROM Messages m1
+        INNER JOIN (
+            SELECT ChatId, MAX(createdAt) AS maxDate
+            FROM Messages
+            GROUP BY ChatId
+        ) m2 ON m1.ChatId = m2.ChatId AND m1.createdAt = m2.maxDate
+        WHERE m1._id = (
+            SELECT MAX(_id)
+            FROM Messages m3
+            WHERE m3.ChatId = m1.ChatId AND m3.createdAt = m1.createdAt
+        )
+    ) m ON m.ChatId = c.Id
 
-            ORDER BY 
-            m.createdAt IS NULL, 
-            m.createdAt DESC;
-        `;
+    WHERE cm.UserId = ?
+
+    ORDER BY 
+        m.createdAt IS NULL, 
+        m.createdAt DESC;
+`;
 
 		let conn: PoolConnection | Err = await db.connect();
 		if (conn instanceof Err) return conn;
@@ -124,7 +125,7 @@ export async function getMessagesFromChat(
 		const query = `
 SELECT *
 FROM (
-    -- Chat meta data 
+    -- Chat meta data as first entry
     SELECT 
         CASE
             WHEN (
@@ -155,30 +156,34 @@ FROM (
             JOIN Users u2 ON cm.UserId = u2.Id
             WHERE cm.ChatId = c.Id
         ) AS participants,
-        NULL AS user,
-        NULL AS text,
-        NULL AS createdAt,
+        JSON_OBJECT(
+            '_id', 'bot',
+            'name', 'bot',
+            'avatar', 'bot'
+        ) AS user,
+        'bot' AS text,
+        c.CreatedAt AS createdAt, -- 👈 echte createdAt von Chats
         NULL AS sent,
-        NULL AS "system",
-        NULL AS recieved,
-        NULL AS pending,
+        TRUE AS "system",
+        0 AS recieved,
+        0 AS pending,
         NULL AS quickReplies,
         NULL AS audio,
         NULL AS video,
         NULL AS image,
-        NULL AS _id,
-        NULL AS "type",
+        'profile-card' AS _id,
+        'text' AS "type",
         NULL AS trickId,
         NULL AS riderId,
-		NULL AS isReply, 
-		NULL AS replyToMessageId
+        FALSE AS isReply,
+        NULL AS replyToMessageId
 
     FROM Chats c
     WHERE c.Id = ?
 
     UNION ALL
 
-    -- Messages with user object
+    -- Actual messages
     SELECT 
         NULL AS chatName,
         NULL AS isGroup,
@@ -204,8 +209,8 @@ FROM (
         m.type AS "type",
         m.trickId AS trickId,
         m.riderId AS riderId,
-		m.isReply AS isReply, 
-		m.replyToMessageId AS replyToMessageId
+        m.isReply AS isReply,
+        m.replyToMessageId AS replyToMessageId
     FROM Messages m
     JOIN Users u ON m.SenderId = u.Id
     WHERE m.ChatId = ?
@@ -222,46 +227,12 @@ ORDER BY createdAt DESC;
 					reject(new Err(ErrType.MySqlFailedQuery, err));
 					return;
 				}
-
 				resolve(results);
 			});
 		});
 
-		const profileCardMessage = {
-			ChatName: null,
-			isGroup: null,
-			ChatId: null,
-			ChatAvatar: null,
-			participants: null,
-			user: {
-				_id: 'bot',
-				name: 'bot',
-				avatar: 'bot',
-			},
-			text: 'bot',
-			createdAt: '1',
-			sent: null,
-			system: true,
-			recieved: 0,
-			pending: 0,
-			quickReplies: null,
-			audio: null,
-			video: null,
-			image: null,
-			_id: 'profile-card',
-			type: 'text',
-			trickId: null,
-			riderId: null,
-			isReply: false,
-			replyToMessageId: undefined,
-		};
-
-		const modifiedMessages = [profileCardMessage, ...messages];
-
-		console.log(modifiedMessages);
-
 		conn.release();
-		res.json(modifiedMessages);
+		res.json(messages);
 	} catch (err) {
 		return err as Err;
 	}
