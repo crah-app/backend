@@ -421,3 +421,12 @@ VALUES
 
 ('msg_3', 'user_1', '2025-04-14 09:05:00'),
 ('msg_3', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '2025-04-14 09:06:00');
+
+-- video managment for video uploading/loading and cloudflare R2
+CREATE TABLE videos (
+  id VARCHAR(255) PRIMARY KEY,
+  userId VARCHAR(255) NOT NULL,
+  key TEXT NOT NULL,
+  status ENUM('pending', 'uploaded') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
