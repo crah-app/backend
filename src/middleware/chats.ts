@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Message } from '../types/chats.js';
 
+// get all chats where user is participant
+
 export async function getChatsFromUser(
 	req: Request,
 	res: Response,
@@ -103,6 +105,8 @@ export async function getChatsFromUser(
 	}
 }
 
+// get all messages from a chat
+
 export async function getMessagesFromChat(
 	req: Request,
 	res: Response,
@@ -120,7 +124,7 @@ export async function getMessagesFromChat(
 		const query = `
 SELECT *
 FROM (
-    -- Chat-Metadaten (ein einzelnes Objekt)
+    -- Chat meta data 
     SELECT 
         CASE
             WHEN (
@@ -165,14 +169,16 @@ FROM (
         NULL AS _id,
         NULL AS "type",
         NULL AS trickId,
-        NULL AS riderId
+        NULL AS riderId,
+		NULL AS isReply, 
+		NULL AS replyToMessageId
 
     FROM Chats c
     WHERE c.Id = ?
 
     UNION ALL
 
-    -- Nachrichten mit user-Objekt
+    -- Messages with user object
     SELECT 
         NULL AS chatName,
         NULL AS isGroup,
@@ -197,7 +203,9 @@ FROM (
         m._id AS _id,
         m.type AS "type",
         m.trickId AS trickId,
-        m.riderId AS riderId
+        m.riderId AS riderId,
+		m.isReply AS isReply, 
+		m.replyToMessageId AS replyToMessageId
     FROM Messages m
     JOIN Users u ON m.SenderId = u.Id
     WHERE m.ChatId = ?
@@ -219,8 +227,41 @@ ORDER BY createdAt DESC;
 			});
 		});
 
+		const profileCardMessage = {
+			ChatName: null,
+			isGroup: null,
+			ChatId: null,
+			ChatAvatar: null,
+			participants: null,
+			user: {
+				_id: 'bot',
+				name: 'bot',
+				avatar: 'bot',
+			},
+			text: 'bot',
+			createdAt: '1',
+			sent: null,
+			system: true,
+			recieved: 0,
+			pending: 0,
+			quickReplies: null,
+			audio: null,
+			video: null,
+			image: null,
+			_id: 'profile-card',
+			type: 'text',
+			trickId: null,
+			riderId: null,
+			isReply: false,
+			replyToMessageId: undefined,
+		};
+
+		const modifiedMessages = [profileCardMessage, ...messages];
+
+		console.log(modifiedMessages);
+
 		conn.release();
-		res.json(messages);
+		res.json(modifiedMessages);
 	} catch (err) {
 		return err as Err;
 	}
@@ -299,6 +340,8 @@ export async function startNewchat(
 }
 
 export async function postMessageToDB(message: any, db: DbConnection) {
+	console.log('new message arrived', message);
+
 	const {
 		_id = message[0]._id,
 		ChatId,
@@ -316,9 +359,9 @@ export async function postMessageToDB(message: any, db: DbConnection) {
 		type = message[0].type,
 		trickId = message[0].trickId,
 		riderId = message[0].riderId,
-	} = message;
-
-	console.log(ChatId, SenderId);
+		isReply = message[0].isReply,
+		replyToMessageId = message[0].replyToMessageId,
+	}: Message = message;
 
 	if (!ChatId || !SenderId) {
 		return new Err(
@@ -334,8 +377,8 @@ export async function postMessageToDB(message: any, db: DbConnection) {
 	INSERT INTO Messages (
 		_id, ChatId, SenderId, text, image, video, audio,
 		\`system\`, sent, received, pending, quickReplies,
-		createdAt, type, trickId, riderId
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+		createdAt, type, trickId, riderId, isReply, replyToMessageId
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
 	const values = [
@@ -355,6 +398,8 @@ export async function postMessageToDB(message: any, db: DbConnection) {
 		type,
 		trickId,
 		riderId,
+		isReply,
+		replyToMessageId,
 	];
 
 	try {

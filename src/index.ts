@@ -81,7 +81,6 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('message-seen', async ({ chatId, userId, isInChat }) => {
-		console.log('message seen ycxycyxyxcycxcycyxc', chatId, userId, isInChat);
 		// io.to(chatId).emit('message-seen', chatId);
 
 		if (!isInChat) return;

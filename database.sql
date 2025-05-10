@@ -250,24 +250,26 @@ CREATE TABLE ChatMembers (
     INDEX idx_user_id (UserId)
 );
 
--- MESSAGES (based an IMessage)
+-- MESSAGES (based an IMessage and the extended version ChatMessage)
 CREATE TABLE Messages (
-    _id VARCHAR(36) PRIMARY KEY,                   -- geändert von Id auf _id
+    _id VARCHAR(36) PRIMARY KEY,                   
     ChatId VARCHAR(36) NOT NULL,
     SenderId VARCHAR(255) NOT NULL,
-    text TEXT,                                     -- 'Content' wird zu 'text'
-    image TEXT,                                    -- hinzugefügt für Bild
-    video TEXT,                                    -- hinzugefügt für Video
-    audio TEXT,                                    -- hinzugefügt für Audio
-    `system` BOOLEAN DEFAULT FALSE,                -- Backticks statt doppelte Anführungszeichen
-    sent BOOLEAN DEFAULT FALSE,                    -- hinzugefügt für sent
-    received BOOLEAN DEFAULT FALSE,                -- hinzugefügt für received
-    pending BOOLEAN DEFAULT FALSE,                 -- hinzugefügt für pending
-    quickReplies JSON,                             -- hinzugefügt für quickReplies
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,  -- Timestamp
-    `type` ENUM('text', 'rider', 'trick') DEFAULT 'text', -- korrekte ENUM-Syntax
-    trickId INT DEFAULT NULL,                   -- TrickId hinzugefügt
-    riderId VARCHAR(255) DEFAULT NULL,          -- RiderId hinzugefügt
+    text TEXT,                                     
+    image TEXT,                                 
+    video TEXT,                               
+    audio TEXT,                                 
+    `system` BOOLEAN DEFAULT FALSE,             
+    sent BOOLEAN DEFAULT FALSE,                    
+    received BOOLEAN DEFAULT FALSE,             
+    pending BOOLEAN DEFAULT FALSE,               
+    quickReplies JSON,                             
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,  
+    `type` ENUM('text', 'rider', 'trick') DEFAULT 'text',
+    trickId INT DEFAULT NULL,                   
+    riderId VARCHAR(255) DEFAULT NULL,
+    isReply boolean DEFAULT FALSE,
+    replyToMessageId varchar(36) DEFAULT NULL,          
     FOREIGN KEY (ChatId) REFERENCES Chats(Id) ON DELETE CASCADE,
     FOREIGN KEY (SenderId) REFERENCES Users(Id) ON DELETE CASCADE,
     INDEX idx_chat_id_created_at (ChatId, createdAt)

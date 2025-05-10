@@ -17,21 +17,24 @@ export type MessageType = 'text' | 'rider' | 'trick';
 
 export interface Message {
 	_id?: string;
-	chatId: string;
+	ChatId: string;
+	SenderId: string;
 	user: ChatUser;
 	text?: string;
 	image?: string;
 	video?: string;
 	audio?: string;
 	system?: boolean;
-	sent?: boolean;
-	received?: boolean;
+	sent?: boolean | null;
+	received?: boolean | null;
 	pending?: boolean;
 	quickReplies?: Record<string, any> | null;
 	createdAt?: Date | string;
 	type?: MessageType;
 	trickId?: number | null;
 	riderId?: string | null;
+	isReply: boolean;
+	replyToMessageId: string | undefined;
 }
 
 interface ChatMember {
