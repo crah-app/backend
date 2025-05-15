@@ -1,11 +1,11 @@
 import { Err, ErrType } from './errors.js';
-import  dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import mysql, { PoolConnection, Query, Pool } from 'mysql2';
 dotenv.config();
 
 export default class DbConnection {
 	pool: Pool;
-	
+
 	constructor(
 		host: string,
 		database: string,
@@ -20,23 +20,34 @@ export default class DbConnection {
 			password: password,
 			database: database,
 			connectionLimit: limit,
-			port: port
+			port: port,
 		});
 	}
-	
+
 	async connect(): Promise<PoolConnection | Err> {
 		try {
 			return await new Promise<PoolConnection>((resolve) => {
 				this.pool.getConnection((err, conn) => {
-					if(!conn) throw new Err(ErrType.MySqlConnectionFailed, err);
+					if (!conn) throw new Err(ErrType.MySqlConnectionFailed, err);
 					else resolve(conn);
 				});
 			});
-		} catch(e) {
+		} catch (e) {
 			return e as Err;
 		}
 	}
-	
+
+	async execute(query: string, params: any[]): Promise<any> {
+		const conn = await this.connect();
+		if (conn instanceof Err) throw conn;
+
+		try {
+			return await conn.execute(query, params);
+		} finally {
+			conn.release();
+		}
+	}
+
 	/*async connect(callback: (conn: PoolConnection, resolve: any, reject: any) => any): Promise<Err | any> {
 		try {
 			return await new Promise<any>((resolve, reject) => {
@@ -67,5 +78,3 @@ export const dbConnection = new DbConnection(
 	3306,
 	Number(process.env.DB_CONNECTION_LIMIT),
 );
-
-

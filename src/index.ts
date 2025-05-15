@@ -4,7 +4,7 @@ import tricks from './routes/tricks.js';
 import _default from './routes/default.js';
 import users from './routes/users.js';
 import chats from './routes/chats.js';
-import source from "./routes/source.js";
+import source from './routes/source.js';
 
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -15,6 +15,7 @@ import { dbConnection } from './constants/dbConnection.js';
 
 import redis from 'redis';
 import { Err } from './constants/errors.js';
+import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
 
 const redisClient = redis.createClient();
 
@@ -157,7 +158,7 @@ router.use('/posts', posts);
 router.use('/tricks', tricks);
 router.use('/users', users);
 router.use('/chats', chats);
-router.use("/source", source);
+router.use('/source', source);
 
 // 7. Start server
 const PORT = process.env.PORT || '4000';

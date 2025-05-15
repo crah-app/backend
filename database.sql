@@ -395,13 +395,12 @@ VALUES
 INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`, sent, received, pending, quickReplies, createdAt, type)
 VALUES
 ('msg_1', 'chat_1', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'Wer bringt morgen die Kamera mit?', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 08:00:00', "text"),
-('msg_2', 'chat_2', 'user_3', 'Hier ist das Video 🎥', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00', "text"),
-('msg_3', 'chat_3', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Neuer LUT hochgeladen!', 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00', "text"),
+('msg_2', 'chat_2', 'user_3', 'Hier ist das Video 🎥', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00', "text"),
+('msg_3', 'chat_3', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Neuer LUT hochgeladen!', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 09:00:00', "text"),
 
-('msg_4', 'chat_4', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Hier ist das unser neuer chat', NULL, 'https://www.youtube.com/watch?v=UTjwyDuVjRM&t=225s', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00', "text"),
-('msg_5', 'chat_4', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'alright2', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 10:00:00', "text"),
-('msg_6', 'chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'alright', NULL, 'https://www.w3schools.com/html/mov_bbb.mp4
-', NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-15 11:00:01', "text");
+('msg_4', 'chat_4', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Hier ist das unser neuer chat', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-14 10:00:00', "text"),
+('msg_5', 'chat_4', 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'alright2', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-16 10:00:00', "text"),
+('msg_6', 'chat_4', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', 'alright', NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL, '2025-04-15 11:00:01', "text");
 
 INSERT INTO Messages (_id, ChatId, SenderId, text, image, video, audio, `system`, sent, received, pending, quickReplies, createdAt, `type`, riderId)
 VALUES
@@ -423,10 +422,10 @@ VALUES
 ('msg_3', 'user_2vlanCL8M2qebrHnMGQgqdfz7Wo', '2025-04-14 09:06:00');
 
 -- video managment for video uploading/loading and cloudflare R2
-CREATE TABLE videos (
+CREATE TABLE Videos (
   id VARCHAR(255) PRIMARY KEY,
   userId VARCHAR(255) NOT NULL,
-  key TEXT NOT NULL,
-  status ENUM('pending', 'uploaded') DEFAULT 'pending',
+  `key` TEXT NOT NULL,
+  `status` ENUM('pending', 'uploaded') DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
