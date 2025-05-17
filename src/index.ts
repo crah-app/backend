@@ -57,7 +57,6 @@ interface isTypingInterface {
 // 6. Setup routes
 let router = app.getRouter();
 router.use('/webhooks/clerk', clerk_webhook_user);
-// app.inner.use(express.json());
 router.use('/', _default);
 router.use('/posts', posts);
 router.use('/tricks', tricks);

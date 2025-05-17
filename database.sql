@@ -8,6 +8,7 @@ CREATE TABLE Users (
     Name VARCHAR(100) NOT NULL,
     lastActiveAt DATETIME DEFAULT NULL,
     createdAt DATETIME DEFAULT NULL,
+    avatar varchar(255),
     PRIMARY KEY (Id)
 );
 

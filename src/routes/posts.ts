@@ -12,7 +12,7 @@ import { dbConnection } from '../constants/dbConnection.js';
 import { errorHandler } from '../constants/errors.js';
 
 const router = express.Router({ mergeParams: true });
-
+router.use(express.json());
 export default router;
 
 /* 

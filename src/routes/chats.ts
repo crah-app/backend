@@ -13,6 +13,7 @@ import cors from 'cors';
 
 const router = express.Router({ mergeParams: true });
 router.use(cors());
+router.use(express.json());
 export default router;
 
 /**
@@ -52,12 +53,19 @@ router.post('/link-preview', async (req: Request, res: Response) => {
 */
 
 router.post('/new', async (req: Request, res: Response) => {
-	const { isGroup } = req.body;
+	try {
+		console.log(req.body);
 
-	if (!isGroup) {
-		errorHandler(await startNewchat(req, res, dbConnection), res);
-		return;
+		const { isGroup } = req.body;
+
+		if (!isGroup) {
+			errorHandler(await startNewchat(req, res, dbConnection), res);
+			return;
+		}
+
+		errorHandler(await createGroupChat(req, res, dbConnection), res);
+	} catch (error) {
+		console.warn(error);
+		res.status(500).send(error);
 	}
-
-	errorHandler(await createGroupChat(req, res, dbConnection), res);
 });

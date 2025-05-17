@@ -9,6 +9,8 @@ import { dbConnection } from '../constants/dbConnection.js';
 const secret = process.env.CLERK_PEM_PUBLIC_KEY!;
 const router = express.Router({ mergeParams: true });
 
+router.use(express.json());
+
 /* 
 	client wants to upload a video. 
 	Therefore client sends metadata to predict a video upload

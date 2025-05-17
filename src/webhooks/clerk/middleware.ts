@@ -32,7 +32,7 @@ async function userCreated(userData: UserJSON, req: Request, res: Response) {
 		if (conn instanceof Err) return conn;
 
 		const query = `
-            INSERT INTO Users (Id, Name, lastActiveAt, createdAt) VALUES (?,?,?,?)
+            INSERT INTO Users (Id, Name, createdAt) VALUES (?,?,?)
             `;
 
 		await conn
@@ -40,11 +40,12 @@ async function userCreated(userData: UserJSON, req: Request, res: Response) {
 			.query(query, [
 				userData.id,
 				userData.username,
-				userData.last_active_at,
-				userData.created_at,
+				new Date(userData.created_at),
 			]);
 
 		conn.release();
+
+		console.log('Webhook received. User created successfully!');
 		return res.status(200).send('Webhook received. User created successfully!');
 	} catch (error) {
 		console.error('Error creating user:', error);
@@ -66,6 +67,7 @@ export async function userDeleted(
 		await conn.promise().query(query, [userData.id]);
 
 		conn.release();
+		console.log('Webhook received. User deleted successfully!');
 		return res.status(200).send('Webhook received. User deleted successfully!');
 	} catch (error) {
 		console.error('Error deleting user:', error);
@@ -90,9 +92,14 @@ export async function userUpdated(
 
 		await conn
 			.promise()
-			.query(query, [userData.username, userData.last_active_at, userData.id]);
+			.query(query, [
+				userData.username,
+				new Date(userData.last_active_at as number),
+				userData.id,
+			]);
 
 		conn.release();
+		console.log('Webhook received. User updated successfully!');
 		return res.status(200).send('Webhook received. User updated successfully!');
 	} catch (error) {
 		console.error('Error updating user:', error);

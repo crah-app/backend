@@ -11,6 +11,8 @@ import { dbConnection } from '../constants/dbConnection.js';
 const router = express.Router({ mergeParams: true });
 const secret = process.env.CLERK_PEM_PUBLIC_KEY!;
 
+router.use(express.json());
+
 export default router;
 
 router

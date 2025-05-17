@@ -6,6 +6,8 @@ import { getAllUsers, getUserStats } from '../middleware/users.js';
 
 const router = express.Router({ mergeParams: true });
 
+router.use(express.json());
+
 /* 
 e.g
 
