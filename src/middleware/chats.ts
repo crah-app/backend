@@ -176,7 +176,8 @@ FROM (
         NULL AS trickId,
         NULL AS riderId,
         FALSE AS isReply,
-        NULL AS replyToMessageId
+        NULL AS replyToMessageId,
+		NULL as sourceData
 
     FROM Chats c
     WHERE c.Id = ?
@@ -210,7 +211,8 @@ FROM (
         m.trickId AS trickId,
         m.riderId AS riderId,
         m.isReply AS isReply,
-        m.replyToMessageId AS replyToMessageId
+        m.replyToMessageId AS replyToMessageId,
+		m.sourceData AS sourceData
     FROM Messages m
     JOIN Users u ON m.SenderId = u.Id
     WHERE m.ChatId = ?
@@ -252,17 +254,31 @@ export async function getChatUrlMediaPreview(
 	}
 }
 
+// @josef-stips
+// check wether chat with that user can be started
+// because some users may do not allow that some random starts a chat with them
+async function canStartChatWithOtherUser(): Promise<boolean> {
+	return true;
+}
+
+// currentUser wants to create one-to-one chat
 export async function startNewchat(
 	req: Request,
 	res: Response,
 	db: DbConnection,
 ) {
 	const { senderId, receiverId } = req.body;
+	const userIsNotRestricted = canStartChatWithOtherUser();
 
 	if (!senderId || !receiverId)
 		return res
 			.status(400)
 			.json({ error: 'senderId and receiverId are required' });
+
+	if (!userIsNotRestricted)
+		return res
+			.status(500)
+			.json({ error: 'Failed to create chat. User is restricted.' });
 
 	try {
 		const conn = await db.connect();
@@ -307,6 +323,83 @@ export async function startNewchat(
 	} catch (error) {
 		console.error('Error creating chat:', error);
 		return res.status(500).json({ error: 'Failed to create chat' });
+	}
+}
+
+// currentUser wants to create group chat
+export async function createGroupChat(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const { creatorId, memberIds, name } = req.body;
+
+	console.log('lol', creatorId, memberIds, name);
+
+	if (
+		!creatorId ||
+		!Array.isArray(memberIds) ||
+		memberIds.length === 0 ||
+		!name
+	) {
+		return res.status(400).json({
+			error:
+				'creatorId, memberIds (array), and name are required for group chat',
+		});
+	}
+
+	try {
+		const conn = await db.connect();
+		if (conn instanceof Err) throw conn;
+
+		// validisation: do all users exist?
+		const [rows] = await conn
+			.promise()
+			.query('SELECT Id FROM Users WHERE Id IN (?)', [[...memberIds]]);
+
+		const foundUserIds = (rows as any[]).map((row) => row.Id);
+
+		console.log(foundUserIds);
+
+		if (foundUserIds.length !== memberIds.length) {
+			conn.release();
+			return res
+				.status(400)
+				.json({ error: 'One or more userIds do not exist' });
+		}
+
+		const chatId = uuidv4();
+
+		// 1. create group chat
+		await conn
+			.promise()
+			.query(`INSERT INTO Chats (Id, IsGroup, Name) VALUES (?, TRUE, ?)`, [
+				chatId,
+				name,
+			]);
+
+		const placeholders = memberIds.map(() => `(?, ?, ? )`).join(',');
+		const values: (string | boolean)[] = [];
+
+		memberIds.forEach((userId) => {
+			values.push(chatId, userId, userId === creatorId); // true for admin
+		});
+
+		console.log(placeholders);
+
+		await conn
+			.promise()
+			.query(
+				`INSERT INTO ChatMembers (ChatId, UserId, IsAdmin) VALUES ${placeholders}`,
+				values,
+			);
+
+		conn.release();
+
+		return res.status(201).json({ chatId });
+	} catch (error) {
+		console.error('Error creating group chat:', error);
+		return res.status(500).json({ error: 'Failed to create group chat' });
 	}
 }
 

@@ -15,7 +15,7 @@ export class App {
 	constructor(desc: AppDescription) {
 		let app = express();
 		app.use(cors());
-		app.use(express.json());
+		// app.use(express.json());
 		app.use(desc.assetsPath, express.static(desc.assetsDir));
 
 		const router = express.Router();

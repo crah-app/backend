@@ -5,6 +5,8 @@ import _default from './routes/default.js';
 import users from './routes/users.js';
 import chats from './routes/chats.js';
 import source from './routes/source.js';
+import clerk_webhook_user from './webhooks/clerk/routes.js';
+import express from 'express';
 
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -51,6 +53,17 @@ interface isTypingInterface {
 		[userId: string]: boolean;
 	};
 }
+
+// 6. Setup routes
+let router = app.getRouter();
+router.use('/webhooks/clerk', clerk_webhook_user);
+// app.inner.use(express.json());
+router.use('/', _default);
+router.use('/posts', posts);
+router.use('/tricks', tricks);
+router.use('/users', users);
+router.use('/chats', chats);
+router.use('/source', source);
 
 // 5. Handle Socket.IO events
 let typingUsers: isTypingInterface = {}; // Store typing status in memory
@@ -150,15 +163,6 @@ io.on('connection', (socket) => {
 		}
 	});
 });
-
-// 6. Setup routes
-let router = app.getRouter();
-router.use('/', _default);
-router.use('/posts', posts);
-router.use('/tricks', tricks);
-router.use('/users', users);
-router.use('/chats', chats);
-router.use('/source', source);
 
 // 7. Start server
 const PORT = process.env.PORT || '4000';

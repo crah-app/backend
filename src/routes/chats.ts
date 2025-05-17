@@ -2,6 +2,7 @@ import express from 'express';
 import { errorHandler } from '../constants/errors.js';
 import { Response, Request } from 'express';
 import {
+	createGroupChat,
 	getChatsFromUser,
 	getChatUrlMediaPreview,
 	getMessagesFromChat,
@@ -51,5 +52,12 @@ router.post('/link-preview', async (req: Request, res: Response) => {
 */
 
 router.post('/new', async (req: Request, res: Response) => {
-	errorHandler(await startNewchat(req, res, dbConnection), res);
+	const { isGroup } = req.body;
+
+	if (!isGroup) {
+		errorHandler(await startNewchat(req, res, dbConnection), res);
+		return;
+	}
+
+	errorHandler(await createGroupChat(req, res, dbConnection), res);
 });
