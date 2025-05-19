@@ -29,16 +29,27 @@ export async function getChatsFromUser(
         c.IsGroup,
         c.CreatedAt AS ChatCreatedAt, 
 
-        CASE 
-            WHEN c.IsGroup = FALSE THEN (
-                SELECT u.Name
-                FROM ChatMembers cm2
-                JOIN Users u ON u.Id = cm2.UserId
-                WHERE cm2.ChatId = c.Id AND cm2.UserId != ?
-                LIMIT 1
-            )
-            ELSE c.Name
-        END AS Name,
+    CASE 
+        WHEN c.IsGroup = FALSE THEN (
+            SELECT u.Name 
+            FROM ChatMembers cm2
+            JOIN Users u ON u.Id = cm2.UserId
+            WHERE cm2.ChatId = c.Id AND cm2.UserId != ?
+            LIMIT 1
+        )
+        ELSE c.Name
+    END AS Name,
+
+    CASE 
+        WHEN c.IsGroup = FALSE THEN (
+            SELECT u.avatar 
+            FROM ChatMembers cm2
+            JOIN Users u ON u.Id = cm2.UserId
+            WHERE cm2.ChatId = c.Id AND cm2.UserId != ?
+            LIMIT 1
+        )
+        ELSE NULL
+    END AS Avatar,
 
         m.text AS LastMessageContent,
         m.SenderId AS LastMessageSenderId,
@@ -141,9 +152,20 @@ FROM (
                 LIMIT 1
             )
         END AS ChatName,
+
+		CASE 
+			WHEN c.IsGroup = FALSE THEN (
+				SELECT u.avatar 
+				FROM ChatMembers cm2
+				JOIN Users u ON u.Id = cm2.UserId
+				WHERE cm2.ChatId = c.Id AND cm2.UserId != ?
+				LIMIT 1
+			)
+			ELSE NULL
+		END AS ChatAvatar,
+
         c.IsGroup AS isGroup,
         c.Id AS ChatId,
-        c.Avatar AS ChatAvatar,
         (
             SELECT JSON_ARRAYAGG(
                 JSON_OBJECT(
@@ -162,7 +184,7 @@ FROM (
             'avatar', 'bot'
         ) AS user,
         'bot' AS text,
-        c.CreatedAt AS createdAt, -- 👈 echte createdAt von Chats
+        c.CreatedAt AS createdAt,
         NULL AS sent,
         TRUE AS "system",
         0 AS recieved,
@@ -224,13 +246,17 @@ ORDER BY createdAt DESC;
 		if (conn instanceof Err) return conn;
 
 		const messages = await new Promise<any>((resolve, reject) => {
-			conn.query(query, [userId, chatId, chatId], (err: any, results: any) => {
-				if (err) {
-					reject(new Err(ErrType.MySqlFailedQuery, err));
-					return;
-				}
-				resolve(results);
-			});
+			conn.query(
+				query,
+				[userId, userId, chatId, chatId],
+				(err: any, results: any) => {
+					if (err) {
+						reject(new Err(ErrType.MySqlFailedQuery, err));
+						return;
+					}
+					resolve(results);
+				},
+			);
 		});
 
 		conn.release();

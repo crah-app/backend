@@ -257,6 +257,7 @@ CREATE TABLE Messages (
     _id VARCHAR(36) PRIMARY KEY,                   
     ChatId VARCHAR(36) NOT NULL,
     SenderId VARCHAR(255) NOT NULL,
+    ChatAvatar VARCHAR(255) NOT NULL,
     text TEXT,                                     
     image TEXT,                                 
     video TEXT,                               

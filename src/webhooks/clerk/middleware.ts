@@ -32,7 +32,7 @@ async function userCreated(userData: UserJSON, req: Request, res: Response) {
 		if (conn instanceof Err) return conn;
 
 		const query = `
-            INSERT INTO Users (Id, Name, createdAt) VALUES (?,?,?)
+            INSERT INTO Users (Id, Name, createdAt, avatar) VALUES (?,?,?,?)
             `;
 
 		await conn
@@ -41,6 +41,7 @@ async function userCreated(userData: UserJSON, req: Request, res: Response) {
 				userData.id,
 				userData.username,
 				new Date(userData.created_at),
+				userData.image_url,
 			]);
 
 		conn.release();
@@ -86,7 +87,7 @@ export async function userUpdated(
 
 		const query = `
 			UPDATE Users
-			SET Name = ?, lastActiveAt = ?
+			SET Name = ?, lastActiveAt = ?, avatar = ?
 			WHERE Id = ?
 		`;
 
@@ -95,6 +96,7 @@ export async function userUpdated(
 			.query(query, [
 				userData.username,
 				new Date(userData.last_active_at as number),
+				userData.image_url,
 				userData.id,
 			]);
 
