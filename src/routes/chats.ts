@@ -3,6 +3,7 @@ import { errorHandler } from '../constants/errors.js';
 import { Response, Request } from 'express';
 import {
 	createGroupChat,
+	deleteChat,
 	getChatsFromUser,
 	getChatUrlMediaPreview,
 	getMessagesFromChat,
@@ -54,8 +55,6 @@ router.post('/link-preview', async (req: Request, res: Response) => {
 
 router.post('/new', async (req: Request, res: Response) => {
 	try {
-		console.log(req.body);
-
 		const { isGroup } = req.body;
 
 		if (!isGroup) {
@@ -64,6 +63,15 @@ router.post('/new', async (req: Request, res: Response) => {
 		}
 
 		errorHandler(await createGroupChat(req, res, dbConnection), res);
+	} catch (error) {
+		console.warn(error);
+		res.status(500).send(error);
+	}
+});
+
+router.delete('/delete', async (req: Request, res: Response) => {
+	try {
+		errorHandler(await deleteChat(req, res, dbConnection), res);
 	} catch (error) {
 		console.warn(error);
 		res.status(500).send(error);

@@ -1,10 +1,10 @@
 import express, { Response, Request } from 'express';
 import {
 	generatePresignedUrl,
-	markVideoUploaded,
+	markSourceUploaded,
 } from '../middleware/source.js';
 import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
-import { dbConnection } from '../constants/dbConnection.js';
+import DbConnection, { dbConnection } from '../constants/dbConnection.js';
 
 const secret = process.env.CLERK_PEM_PUBLIC_KEY!;
 const router = express.Router({ mergeParams: true });
@@ -45,10 +45,8 @@ router.post(
 	},
 );
 
-router.post('/mark-video-as-uploaded', async (req, res) => {
+router.post('/mark-source-as-uploaded', async (req, res) => {
 	const { videoId } = req.body;
-	await markVideoUploaded(videoId, dbConnection);
+	await markSourceUploaded(videoId, dbConnection);
 	res.json({ success: true });
 });
-
-export default router;

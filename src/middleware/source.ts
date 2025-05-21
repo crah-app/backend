@@ -44,12 +44,12 @@ export async function generatePresignedUrl(
 		ContentType: contentType,
 	});
 
-	const url = await getSignedUrl(s3, command, { expiresIn: 300 }); // 5 Minuten
+	const url = await getSignedUrl(s3, command, { expiresIn: 300 }); // 5 minutes
 
 	return { url, videoId, key };
 }
 
-export async function markVideoUploaded(videoId: string, db: DbConnection) {
+export async function markSourceUploaded(videoId: string, db: DbConnection) {
 	const connOrErr = await db.connect();
 	if (connOrErr instanceof Err) throw connOrErr;
 	const conn = connOrErr;

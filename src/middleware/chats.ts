@@ -451,6 +451,8 @@ export async function postMessageToDB(message: any, db: DbConnection) {
 		riderId = message[0].riderId,
 		isReply = message[0].isReply,
 		replyToMessageId = message[0].replyToMessageId,
+		sourceData = message[0].sourceData ?? JSON.stringify({}),
+		ChatAvatar = message[0].ChatAvatar ?? '',
 	}: Message = message;
 
 	if (!ChatId || !SenderId) {
@@ -467,8 +469,8 @@ export async function postMessageToDB(message: any, db: DbConnection) {
 	INSERT INTO Messages (
 		_id, ChatId, SenderId, text, image, video, audio,
 		\`system\`, sent, received, pending, quickReplies,
-		createdAt, type, trickId, riderId, isReply, replyToMessageId
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+		createdAt, type, trickId, riderId, isReply, replyToMessageId, sourceData, ChatAvatar
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
 	const values = [
@@ -490,7 +492,11 @@ export async function postMessageToDB(message: any, db: DbConnection) {
 		riderId,
 		isReply,
 		replyToMessageId,
+		sourceData,
+		ChatAvatar,
 	];
+
+	console.log(values);
 
 	try {
 		await conn.promise().query(insertQuery, values);
@@ -502,3 +508,9 @@ export async function postMessageToDB(message: any, db: DbConnection) {
 		return new Err(ErrType.MySqlFailedQuery, err);
 	}
 }
+
+export async function deleteChat(
+	req: Request,
+	res: Response,
+	dbConnection: DbConnection,
+) {}

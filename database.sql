@@ -2,13 +2,18 @@
 CREATE DATABASE IF NOT EXISTS crah CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE crah;
 
--- USERS (von Clerk verwaltet)
+-- USERS (standard information comes from clerk
 CREATE TABLE Users (
     Id VARCHAR(255) NOT NULL,
     Name VARCHAR(100) NOT NULL,
     lastActiveAt DATETIME DEFAULT NULL,
     createdAt DATETIME DEFAULT NULL,
     avatar varchar(255),
+
+    -- abstract information
+    chatGreeting varchar(255) DEFAULT NULL,
+    `rank` ENUM('Unknown', 'Wood', 'Bronze', 'Silver', 'Gold', 'Diamond', 'Platin', 'Legendary') NOT NULL
+
     PRIMARY KEY (Id)
 );
 

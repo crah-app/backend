@@ -35,6 +35,8 @@ export interface Message {
 	riderId?: string | null;
 	isReply: boolean;
 	replyToMessageId: string | undefined;
+	sourceData: JSON;
+	ChatAvatar: string;
 }
 
 interface ChatMember {
