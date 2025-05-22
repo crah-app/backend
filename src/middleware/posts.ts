@@ -3,9 +3,6 @@ import { Request, Response } from 'express';
 import { Err, ErrType } from './../constants/errors.js';
 import DbConnection from './../constants/dbConnection.js';
 
-import path from 'path';
-import { promises as fs } from 'fs';
-
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -149,7 +146,28 @@ async function getAllPostsFromDatabase(userId: string) {
 
 // get all posts 
 export async function getAllPosts(res:Response, req: Request, db : DbConnection) {
-	res.json(posts);
+	try {
+		const postQuery = `SELECT * FROM Posts`;
+
+		const conn = await db.connect();
+		if (conn instanceof Err) return conn;
+
+		const posts = await new Promise<any>((resolve, reject) => {
+			conn.query(postQuery, (err: any, results: any) => {
+				if (err) {
+					conn.release();
+					reject(new Err(ErrType.MySqlFailedQuery, err));
+					return;
+				}
+				resolve(results);
+			});
+		});
+
+		res.json(posts)
+
+	} catch (err) {
+		return err as Err;
+	}
 };
 
 // get all posts from a specific rank
