@@ -1,7 +1,7 @@
 import express, { Response, Request } from 'express';
 import {
 	generatePresignedUrl,
-	markVideoUploaded,
+	markSourceUploaded,
 } from '../../middleware/source.js';
 import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
 import { dbConnection } from '../../constants/dbConnection.js';

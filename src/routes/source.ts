@@ -40,6 +40,9 @@ router.post(
 			filename,
 			contentType,
 			dbConnection,
+			duration,
+			height,
+			width,
 		);
 		res.json(result);
 	},
@@ -50,3 +53,5 @@ router.post('/mark-source-as-uploaded', async (req, res) => {
 	await markSourceUploaded(videoId, dbConnection);
 	res.json({ success: true });
 });
+
+export default router;

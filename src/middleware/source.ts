@@ -21,6 +21,9 @@ export async function generatePresignedUrl(
 	filename: string,
 	contentType: string,
 	db: DbConnection,
+	duration: number,
+	width: number,
+	height: number,
 ) {
 	const videoId = uuidv4();
 	const key = `${userId}/${videoId}/${filename}`;
@@ -31,8 +34,8 @@ export async function generatePresignedUrl(
 
 	try {
 		await conn.execute(
-			"INSERT INTO videos (id, userId, `key`, `status`) VALUES (?, ?, ?, 'pending')",
-			[videoId, userId, key],
+			"INSERT INTO sources (id, userId, `key`, `status`, duration, width, height) VALUES (?, ?, ?, 'pending', ?, ?, ?)",
+			[videoId, userId, key, duration, width, height],
 		);
 	} finally {
 		conn.release();
@@ -55,7 +58,7 @@ export async function markSourceUploaded(videoId: string, db: DbConnection) {
 	const conn = connOrErr;
 
 	try {
-		await conn.execute("UPDATE videos SET status = 'uploaded' WHERE id = ?", [
+		await conn.execute("UPDATE sources SET status = 'uploaded' WHERE id = ?", [
 			videoId,
 		]);
 	} finally {

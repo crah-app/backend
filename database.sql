@@ -297,11 +297,14 @@ CREATE TABLE MessageSeen (
 );
 
 -- video managment for video uploading/loading and cloudflare R2
-CREATE TABLE Videos (
+CREATE TABLE Sources (
   id VARCHAR(255) PRIMARY KEY,
   userId VARCHAR(255) NOT NULL,
   `key` TEXT NOT NULL,
   `status` ENUM('pending', 'uploaded') DEFAULT 'pending',
+  duration INT NOT NULL,
+  width INT NOT NULL,
+  height INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
