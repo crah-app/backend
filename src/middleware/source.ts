@@ -61,6 +61,12 @@ export async function markSourceUploaded(videoId: string, db: DbConnection) {
 		await conn.execute("UPDATE sources SET status = 'uploaded' WHERE id = ?", [
 			videoId,
 		]);
+
+		// for uploading a post (its metadata not the files itself)
+		if(metadata.post) {
+			// execute post.ts middleware function for uploading post meta data	
+		};
+		
 	} finally {
 		conn.release();
 	}
