@@ -49,12 +49,8 @@ router.post(
 );
 
 router.post('/mark-source-as-uploaded', async (req, res) => {
-	const { videoId } = req.body;
-	await markSourceUploaded(videoId, dbConnection, {
-		type: 'post',
-		data: { videoId },
-	});
-	res.json({ success: true });
+	const { videoId, metadata, key } = req.body;
+	await markSourceUploaded(req, res, videoId, dbConnection, metadata, key);
 });
 
 export default router;

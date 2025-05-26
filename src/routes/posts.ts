@@ -3,10 +3,10 @@ import { Response, Request } from 'express';
 import {
 	getAllPosts,
 	getAllPostsByUserId,
-	getAllPostsFromFriends,
-	getAllPostsFromRank,
+	// getAllPostsFromFriends,
+	// getAllPostsFromRank,
 	getPost,
-	getPostFromRank,
+	// getPostFromRank,
 } from '../middleware/posts.js';
 import { dbConnection } from '../constants/dbConnection.js';
 import { errorHandler } from '../constants/errors.js';
@@ -48,7 +48,7 @@ returns all posts from the users friends
 */
 
 router.get('/user/:userId/friends/all', async (req: Request, res: Response) => {
-	errorHandler(await getAllPostsFromFriends(res, req, dbConnection), res);
+	// errorHandler(await getAllPostsFromFriends(res, req, dbConnection), res);
 });
 
 /* 
@@ -72,7 +72,7 @@ returns all posts from the current rank
 */
 
 router.get('/rank/:rank/all', async (req: Request, res: Response) => {
-	errorHandler(await getAllPostsFromRank(res, req, dbConnection), res);
+	// errorHandler(await getAllPostsFromRank(res, req, dbConnection), res);
 });
 
 /* 
@@ -84,5 +84,5 @@ returns one post from the a rank
 */
 
 router.get('/rank/:rank/:postId', async (req: Request, res: Response) => {
-	errorHandler(await getPostFromRank(res, req, dbConnection), res);
+	// errorHandler(await getPostFromRank(res, req, dbConnection), res);
 });

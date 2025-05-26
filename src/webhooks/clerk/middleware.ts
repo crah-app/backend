@@ -35,14 +35,12 @@ async function userCreated(userData: UserJSON, req: Request, res: Response) {
             INSERT INTO Users (Id, Name, createdAt, avatar) VALUES (?,?,?,?)
             `;
 
-		await conn
-			.promise()
-			.query(query, [
-				userData.id,
-				userData.username,
-				new Date(userData.created_at),
-				userData.image_url,
-			]);
+		await conn.query(query, [
+			userData.id,
+			userData.username,
+			new Date(userData.created_at),
+			userData.image_url,
+		]);
 
 		conn.release();
 
@@ -65,7 +63,7 @@ export async function userDeleted(
 
 		const query = `DELETE FROM Users WHERE Id = ?`;
 
-		await conn.promise().query(query, [userData.id]);
+		await conn.query(query, [userData.id]);
 
 		conn.release();
 		console.log('Webhook received. User deleted successfully!');
@@ -91,14 +89,12 @@ export async function userUpdated(
 			WHERE Id = ?
 		`;
 
-		await conn
-			.promise()
-			.query(query, [
-				userData.username,
-				new Date(userData.last_active_at as number),
-				userData.image_url,
-				userData.id,
-			]);
+		await conn.query(query, [
+			userData.username,
+			new Date(userData.last_active_at as number),
+			userData.image_url,
+			userData.id,
+		]);
 
 		conn.release();
 		console.log('Webhook received. User updated successfully!');

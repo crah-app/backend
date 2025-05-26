@@ -92,23 +92,17 @@ export async function getChatsFromUser(
         m.createdAt DESC;
 `;
 
-		let conn: PoolConnection | Err = await db.connect();
+		const conn = await db.connect();
+
 		if (conn instanceof Err) return conn;
 
-		const chats = await new Promise<any>((resolve, reject) => {
-			conn.query(
-				query,
-				[userId, userId, userId, userId, userId],
-				(err: any, results: any) => {
-					if (err) {
-						reject(new Err(ErrType.MySqlFailedQuery, err));
-						return;
-					}
-
-					resolve(results);
-				},
-			);
-		});
+		const [chats] = await conn.query(query, [
+			userId,
+			userId,
+			userId,
+			userId,
+			userId,
+		]);
 
 		conn.release();
 		res.json(chats);
@@ -242,22 +236,15 @@ FROM (
 ORDER BY createdAt DESC;
 `;
 
-		let conn: PoolConnection | Err = await db.connect();
-		if (conn instanceof Err) return conn;
+		const conn = await db.connect();
+		if (conn instanceof Err) throw conn;
 
-		const messages = await new Promise<any>((resolve, reject) => {
-			conn.query(
-				query,
-				[userId, userId, chatId, chatId],
-				(err: any, results: any) => {
-					if (err) {
-						reject(new Err(ErrType.MySqlFailedQuery, err));
-						return;
-					}
-					resolve(results);
-				},
-			);
-		});
+		const [messages] = await conn.query(query, [
+			userId,
+			userId,
+			chatId,
+			chatId,
+		]);
 
 		conn.release();
 		res.json(messages);
@@ -311,7 +298,7 @@ export async function startNewchat(
 		if (conn instanceof Err) throw conn;
 
 		// check wether chat between them already exists
-		const [existingChat] = await conn.promise().query(
+		const [existingChat] = await conn.query(
 			`
 			SELECT c.Id FROM Chats c
 			JOIN ChatMembers cm1 ON cm1.ChatId = c.Id AND cm1.UserId = ?
@@ -331,18 +318,14 @@ export async function startNewchat(
 		// create new chat
 		const chatId = uuidv4();
 
-		await conn
-			.promise()
-			.query(`INSERT INTO Chats (Id, IsGroup) VALUES (?, FALSE)`, [chatId]);
+		await conn.query(`INSERT INTO Chats (Id, IsGroup) VALUES (?, FALSE)`, [
+			chatId,
+		]);
 
-		await conn
-			.promise()
-			.query(`INSERT INTO ChatMembers (ChatId, UserId) VALUES (?, ?), (?, ?)`, [
-				chatId,
-				senderId,
-				chatId,
-				receiverId,
-			]);
+		await conn.query(
+			`INSERT INTO ChatMembers (ChatId, UserId) VALUES (?, ?), (?, ?)`,
+			[chatId, senderId, chatId, receiverId],
+		);
 
 		conn.release();
 		return res.status(201).json({ chatId, existing: false });
@@ -379,9 +362,9 @@ export async function createGroupChat(
 		if (conn instanceof Err) throw conn;
 
 		// validisation: do all users exist?
-		const [rows] = await conn
-			.promise()
-			.query('SELECT Id FROM Users WHERE Id IN (?)', [[...memberIds]]);
+		const [rows] = await conn.query('SELECT Id FROM Users WHERE Id IN (?)', [
+			[...memberIds],
+		]);
 
 		const foundUserIds = (rows as any[]).map((row) => row.Id);
 
@@ -397,12 +380,10 @@ export async function createGroupChat(
 		const chatId = uuidv4();
 
 		// 1. create group chat
-		await conn
-			.promise()
-			.query(`INSERT INTO Chats (Id, IsGroup, Name) VALUES (?, TRUE, ?)`, [
-				chatId,
-				name,
-			]);
+		await conn.query(
+			`INSERT INTO Chats (Id, IsGroup, Name) VALUES (?, TRUE, ?)`,
+			[chatId, name],
+		);
 
 		const placeholders = memberIds.map(() => `(?, ?, ? )`).join(',');
 		const values: (string | boolean)[] = [];
@@ -413,12 +394,10 @@ export async function createGroupChat(
 
 		console.log(placeholders);
 
-		await conn
-			.promise()
-			.query(
-				`INSERT INTO ChatMembers (ChatId, UserId, IsAdmin) VALUES ${placeholders}`,
-				values,
-			);
+		await conn.query(
+			`INSERT INTO ChatMembers (ChatId, UserId, IsAdmin) VALUES ${placeholders}`,
+			values,
+		);
 
 		conn.release();
 
@@ -499,7 +478,7 @@ export async function postMessageToDB(message: any, db: DbConnection) {
 	console.log(values);
 
 	try {
-		await conn.promise().query(insertQuery, values);
+		await conn.query(insertQuery, values);
 		conn.release();
 
 		return { ...message, _id, createdAt, sent: true };

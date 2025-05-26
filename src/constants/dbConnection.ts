@@ -1,10 +1,10 @@
 import { Err, ErrType } from './errors.js';
 import dotenv from 'dotenv';
-import mysql, { PoolConnection, Query, Pool } from 'mysql2';
+import mysql from 'mysql2/promise';
 dotenv.config();
 
 export default class DbConnection {
-	pool: Pool;
+	pool: mysql.Pool;
 
 	constructor(
 		host: string,
@@ -15,25 +15,21 @@ export default class DbConnection {
 		limit: number,
 	) {
 		this.pool = mysql.createPool({
-			host: host,
-			user: user,
-			password: password,
-			database: database,
+			host,
+			user,
+			password,
+			database,
+			port,
 			connectionLimit: limit,
-			port: port,
 		});
 	}
 
-	async connect(): Promise<PoolConnection | Err> {
+	async connect(): Promise<mysql.PoolConnection | Err> {
 		try {
-			return await new Promise<PoolConnection>((resolve) => {
-				this.pool.getConnection((err, conn) => {
-					if (!conn) throw new Err(ErrType.MySqlConnectionFailed, err);
-					else resolve(conn);
-				});
-			});
-		} catch (e) {
-			return e as Err;
+			const conn = await this.pool.getConnection();
+			return conn;
+		} catch (err) {
+			return new Err(ErrType.MySqlConnectionFailed, err);
 		}
 	}
 
@@ -42,32 +38,12 @@ export default class DbConnection {
 		if (conn instanceof Err) throw conn;
 
 		try {
-			return await conn.execute(query, params);
+			const [results] = await conn.query(query, params);
+			return results;
 		} finally {
 			conn.release();
 		}
 	}
-
-	/*async connect(callback: (conn: PoolConnection, resolve: any, reject: any) => any): Promise<Err | any> {
-		try {
-			return await new Promise<any>((resolve, reject) => {
-				this.pool.getConnection(async(err, conn) => {
-					if(err) {
-						conn.release();
-						reject(new Err(ErrType.MySqlConnectionFailed));
-						return;
-					}
-					
-					callback(conn, resolve, reject);
-					conn.release();
-				});
-			});
-		} catch(e) {
-			console.log(e);
-			return e as Err;
-		}
-	}
-	*/
 }
 
 export const dbConnection = new DbConnection(

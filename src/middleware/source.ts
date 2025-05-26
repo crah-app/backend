@@ -6,6 +6,8 @@ import { verifyJwt } from './auth.js';
 import express, { Response, Request } from 'express';
 import DbConnection from '../constants/dbConnection.js';
 import { Err } from '../constants/errors.js';
+import { uploadPost } from './posts.js';
+import { sourceMetadataInterface } from '../types/index.js';
 
 const s3 = new S3Client({
 	region: 'auto',
@@ -52,19 +54,19 @@ export async function generatePresignedUrl(
 	return { url, videoId, key };
 }
 
-interface metadataInterface {
-	type: 'post';
-	data: any;
-}
-
 export async function markSourceUploaded(
+	req: Request,
+	res: Response,
 	videoId: string,
 	db: DbConnection,
-	metadata: metadataInterface, // for metadata.type execute db code for posts table...
+	metadata: sourceMetadataInterface, // for metadata.type execute db code for posts table...
+	sourceKey: string,
 ) {
 	const connOrErr = await db.connect();
 	if (connOrErr instanceof Err) throw connOrErr;
 	const conn = connOrErr;
+
+	console.log('gjaergarsdfiogjlfgdfogagfegasdf', metadata, videoId);
 
 	try {
 		await conn.execute("UPDATE sources SET status = 'uploaded' WHERE id = ?", [
@@ -72,7 +74,8 @@ export async function markSourceUploaded(
 		]);
 
 		// for uploading a post (its metadata not the files itself)
-		if (metadata.type == 'post') {
+		if (metadata.type == 'Post') {
+			uploadPost(req, res, metadata, db, sourceKey);
 			// execute post.ts middleware function for uploading post meta data
 		}
 	} finally {

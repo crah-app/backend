@@ -4,7 +4,7 @@ import DbConnection from './../constants/dbConnection.js';
 import { verifyJwt } from './auth.js';
 import { Trick, TrickDescription, TrickType } from '../trickLogic/trick.js';
 import { Spot } from '../trickLogic/spot.js';
-import { Pool, PoolConnection } from 'mysql2';
+import { Pool, PoolConnection } from 'mysql2/promise';
 import { AllowlistIdentifier } from '@clerk/backend';
 
 export interface AllTricksData {
@@ -33,19 +33,11 @@ export async function getTricks(
 			WHERE Tricks.UserId = ?
 		`;
 
-		let conn: PoolConnection | Err = await db.connect();
+		let conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		const trickList = await new Promise<any>((resolve, reject) => {
-			conn.query(query, userId, (err: any, results: any) => {
-				if (err) {
-					reject(new Err(ErrType.MySqlFailedQuery, err));
-					return;
-				}
-
-				resolve(results);
-			});
-		});
+		const [rows] = await conn.query(query, userId);
+		const trickList = [rows];
 
 		const idTricks: Map<number, Partial<Trick>> = new Map();
 
@@ -92,25 +84,23 @@ async function handlePostTrick(
 	const spots: Array<{ spot: Spot; date?: Date }> = req.body.spots;
 
 	const name = parts.join(' ');
-	try {
-		const conn: PoolConnection | Err = await db.connect();
-		if (conn instanceof Err) return conn;
+	const conn = await db.connect();
+	if (conn instanceof Err) return conn;
 
-		// First, check if we already calculated the defaultPoints in AllTricks
+	try {
+		await conn.beginTransaction();
+
+		// Default-Punkte aus AllTricks holen
 		let allTricksData: Err | AllTricksData | undefined = await getTrickData(
 			conn,
 			name,
 		);
-
-		if (allTricksData instanceof Err) return allTricksData as Err;
+		if (allTricksData instanceof Err) throw allTricksData;
 
 		const description = new TrickDescription(parts, spots);
-
-		// The trick builder is going to use them if they aren't undefined, if not it is going
-		// to build the trick from scratch
 		let trick: Trick = new Trick(description, allTricksData);
 
-		// In this case it is missing from AllTricks
+		// Falls Trick nicht existiert, hinzufügen
 		if (!allTricksData) {
 			await addTrickToAllTricks(conn, trick.name, {
 				defaultPoints: trick.defaultPoints,
@@ -118,60 +108,36 @@ async function handlePostTrick(
 			});
 		}
 
-		// SQL query to insert the trick to the database
-		const query = `
+		// Trick einfügen
+		const insertTrickQuery = `
 			INSERT INTO Tricks(UserId, Name, Points)
 			VALUES (?, ?, ?)
 		`;
 
-		const trickId = await new Promise<any>((resolve, reject) => {
-			conn.query('START TRANSACTION');
+		const [result] = await conn.query(insertTrickQuery, [
+			userId,
+			trick.getName(),
+			trick.getPoints(),
+		]);
+		const trickId = (result as any).insertId;
 
-			const params = [userId, trick.getName(), trick.getPoints()];
+		// Spots einfügen
+		const insertSpotQuery = `INSERT INTO Spots(TrickId, Spot, Date) VALUES (?, ?, ?)`;
 
-			conn.query(query, params, (err: any, results: any) => {
-				if (err) {
-					conn.release();
-					reject(new Err(ErrType.MySqlFailedQuery, err));
-					return;
-				}
-				resolve(results.insertId);
-			});
-		});
-
-		const lastIteration = trick.spots.length - 1;
-
-		const spotQuery = `INSERT INTO Spots(TrickId, Spot, Date) VALUES (?, ?, ?)`;
-
-		for (let i = 0; i < trick.spots.length; i++) {
-			// js enums start from 0, but sql enums start at 1 to point to a variant
-			const spot = trick.spots[i].spot + 1;
-
-			await new Promise<void>((resolve, reject) => {
-				conn.query(
-					spotQuery,
-					[trickId, spot, trick.spots[i].date],
-					(err: any) => {
-						if (err) {
-							conn.query('ROLLBACK');
-							reject(new Err(ErrType.MySqlFailedQuery, err));
-							return;
-						}
-						if (i == lastIteration) {
-							conn.query('COMMIT');
-						}
-						resolve();
-					},
-				);
-			});
+		for (const spotObj of trick.spots) {
+			// JS Enums starten bei 0, SQL Enum ab 1
+			const spot = spotObj.spot + 1;
+			await conn.query(insertSpotQuery, [trickId, spot, spotObj.date]);
 		}
 
-		conn.release();
+		await conn.commit();
+		res.status(200).send('Trick added to the trick list');
 	} catch (err) {
+		await conn.rollback();
 		return err as Err;
+	} finally {
+		conn.release();
 	}
-
-	res.status(200).send('Trick added to the trick list');
 }
 
 export async function getTrickData(
@@ -179,7 +145,6 @@ export async function getTrickData(
 	trickName: string,
 ): Promise<Err | AllTricksData | undefined> {
 	try {
-		// SQL query to get default points and types of the trick
 		const query = `
 			SELECT AllTricks.DefaultPoints, TrickTypes.Type
 			FROM AllTricks
@@ -187,19 +152,17 @@ export async function getTrickData(
 			WHERE AllTricks.Name = ?
 		`;
 
-		const data = await new Promise<any>((resolve, reject) => {
-			conn.query(query, [trickName], (err: any, results: any) => {
-				if (err) {
-					conn.release();
-					reject(new Err(ErrType.MySqlFailedQuery, err));
-					return;
-				}
-				resolve(results);
-			});
-		});
+		const [rows] = await conn.query(query, [trickName]);
 
-		if (data.defaultPoints == undefined) return undefined;
-		return data as AllTricksData;
+		// rows ist ein Array; wenn nichts gefunden wurde, dann undefined zurückgeben
+		if (!rows || (rows as any[]).length === 0) return undefined;
+
+		// Falls du nur den ersten Eintrag brauchst:
+		const data = (rows as AllTricksData[])[0];
+
+		if (data.defaultPoints === undefined) return undefined;
+
+		return data;
 	} catch (err) {
 		return err as Err;
 	}
@@ -214,56 +177,25 @@ export async function addTrickToAllTricks(
 	allTricksData: AllTricksData,
 ): Promise<Err | void> {
 	try {
-		// SQL query to get default points
-		conn.query('START TRANSACTION');
+		await conn.beginTransaction();
 
 		const queryAllTricks = `
 			INSERT INTO AllTricks(Name, DefaultPoints) VALUES (?, ?)
 		`;
-
-		await new Promise<any>((resolve, reject) => {
-			conn.query(
-				queryAllTricks,
-				[trickName, allTricksData.defaultPoints],
-				(err: any, results: any) => {
-					if (err) {
-						conn.release();
-						reject(new Err(ErrType.MySqlFailedQuery, err));
-						return;
-					}
-					resolve(results);
-				},
-			);
-		});
+		await conn.query(queryAllTricks, [trickName, allTricksData.defaultPoints]);
 
 		const queryTrickTypes = `
 			INSERT INTO TrickTypes(AllTricksName, Type) VALUES (?, ?)
 		`;
 
-		for (let tType of allTricksData.types) {
-			// js enums start from 0 but mysql enums start from 1
-			let trickType = tType + 1;
-
-			await new Promise<any>((resolve, reject) => {
-				conn.query(
-					queryTrickTypes,
-					[trickName, trickType],
-					(err: any, results: any) => {
-						if (err) {
-							conn.query('ROLLBACK');
-							conn.release();
-							reject(new Err(ErrType.MySqlFailedQuery, err));
-							return;
-						}
-
-						resolve(results);
-					},
-				);
-			});
+		for (const tType of allTricksData.types) {
+			const trickType = tType + 1; // js enums start at 0, mysql enums at 1
+			await conn.query(queryTrickTypes, [trickName, trickType]);
 		}
 
-		conn.query('COMMIT');
+		await conn.commit();
 	} catch (err) {
+		await conn.rollback();
 		return err as Err;
 	}
 }
@@ -294,60 +226,42 @@ export async function HandleDeleteTrick(
 	userId: string,
 	trickId: string,
 ): Promise<Err | void> {
-	const query = `
+	const deleteTrickQuery = `
 		DELETE FROM Tricks
-		WHERE Tricks.Id=?
-		AND Tricks.UserId=?
+		WHERE Tricks.Id = ? AND Tricks.UserId = ?
 	`;
 
+	const deleteSpotsQuery = `
+		DELETE FROM Spots
+		WHERE Spots.TrickId = ?
+	`;
+
+	let conn = await db.connect();
+	if (conn instanceof Err) return conn;
+
 	try {
-		const conn = await db.connect();
-		if (conn instanceof Err) return conn;
+		await conn.beginTransaction();
 
-		await new Promise<void>((resolve, reject) => {
-			conn.query('START TRANSACTION');
-			conn.query(query, [trickId, userId], (err: any) => {
-				if (err) {
-					conn.release();
-					reject(
-						new Err(
-							ErrType.MySqlFailedQuery,
-							err.stack ?? 'Error deleting trick',
-						),
-					);
-					return;
-				}
-				resolve();
-			});
-		});
+		// Trick löschen
+		const [trickResult] = await conn.query(deleteTrickQuery, [trickId, userId]);
 
-		const spotQuery = `
-			DELETE FROM Spots
-			WHERE Spots.TrickId=?
-		`;
+		// Optional: prüfen, ob Trick überhaupt gelöscht wurde
+		// const affectedRows = (trickResult as any).affectedRows;
+		// if (affectedRows === 0) {
+		//   throw new Err(ErrType.NotFound, 'Trick not found or not owned by user');
+		// }
 
-		await new Promise<void>((resolve, reject) => {
-			conn.query(spotQuery, trickId, (err: any) => {
-				if (err) {
-					conn.release();
-					conn.query('ROLLBACK');
-					reject(
-						new Err(
-							ErrType.MySqlFailedQuery,
-							err.stack ?? 'Error deleting spots',
-						),
-					);
-				}
-				resolve();
-			});
-			conn.query('COMMIT');
-		});
+		// Spots löschen
+		await conn.query(deleteSpotsQuery, [trickId]);
 
-		conn.release();
+		await conn.commit();
+		res.status(200).send('Trick deleted from the trick list');
 	} catch (err) {
+		await conn.rollback();
 		return err as Err;
+	} finally {
+		conn.release();
 	}
-	res.status(200).send('Trick deleted from the trick list');
 }
 
 /*
@@ -360,27 +274,21 @@ export async function userOwnsTrick(
 ): Promise<Err | boolean> {
 	const query = `
 		SELECT * FROM Tricks
-		WHERE Tricks.Id=?
-		AND Tricks.UserId=?
+		WHERE Tricks.Id = ?
+		AND Tricks.UserId = ?
 	`;
 
 	try {
 		const conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		return await new Promise<boolean>((resolve, reject) => {
-			conn.query(query, [trickId, userId], (err: any, results: any) => {
-				conn.release();
-				if (err)
-					reject(
-						new Err(
-							ErrType.MySqlFailedQuery,
-							err.stack ?? 'Error checking ownership of trick',
-						),
-					);
-				resolve(results !== undefined);
-			});
-		});
+		try {
+			const [results] = await conn.query(query, [trickId, userId]);
+			// Prüfen, ob mindestens ein Eintrag gefunden wurde
+			return (results as any[]).length > 0;
+		} finally {
+			conn.release();
+		}
 	} catch (err) {
 		return err as Err;
 	}
@@ -400,18 +308,10 @@ export async function getTrick(
 	`;
 
 	try {
-		let conn: PoolConnection | Err = await db.connect();
+		let conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		const trick = await new Promise<void>((resolve, reject) => {
-			conn.query(query, [trickId], (err: any, results: any) => {
-				if (err) {
-					reject(new Err(ErrType.MySqlFailedQuery, err));
-					return;
-				}
-				resolve(results);
-			});
-		});
+		const [trick] = await conn.query(query, [trickId]);
 
 		conn.release();
 		res.json(trick);

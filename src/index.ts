@@ -113,9 +113,7 @@ io.on('connection', (socket) => {
       )
   `;
 
-		await conn
-			.promise()
-			.query(insertSeenQuery, [userId, chatId, userId, userId]);
+		await conn.query(insertSeenQuery, [userId, chatId, userId, userId]);
 		conn.release();
 	});
 

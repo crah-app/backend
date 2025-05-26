@@ -4,6 +4,7 @@ import { Err, ErrType } from './../constants/errors.js';
 import DbConnection from './../constants/dbConnection.js';
 
 import dotenv from 'dotenv';
+import { sourceMetadataInterface } from '../types/index.js';
 dotenv.config();
 
 // dummy data
@@ -29,70 +30,50 @@ function getPostDir(type: string): Err | string {
 	}
 }
 
-// get post by id
 export async function getPost(
 	req: Request,
 	res: Response,
 	db: DbConnection,
 ): Promise<Err | void> {
-	const postId: any | undefined = req.params.postId;
-	// add filter options to body
+	const postId = req.params.postId;
+
+	if (!postId) {
+		return new Err(ErrType.RequestMissingProperty, 'Post ID is required');
+	}
+
+	const postQuery = `SELECT * FROM Posts WHERE Posts.Id = ?`;
+	const likesQuery = `SELECT * FROM Likes WHERE Likes.PostId = ?`;
 
 	try {
-		if (!postId)
-			return new Err(ErrType.RequestMissingProperty, 'Post ID is required');
-
-		const postQuery = `SELECT * FROM Posts WHERE Posts.Id = ?`;
-		const likesQuery = `SELECT * FROM Likes WHERE Likes.PostId = ?`;
-
+		// Verbindung holen
 		const conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		const post = await new Promise<any>((resolve, reject) => {
-			conn.query(postQuery, postId, (err: any, results: any) => {
-				if (err) {
-					conn.release();
-					reject(new Err(ErrType.MySqlFailedQuery, err));
-					return;
-				}
-				resolve(results);
-			});
-		});
+		try {
+			// Post abrufen
+			const [postRows] = await conn.query(postQuery, [postId]);
+			if (!postRows || (postRows as any[]).length === 0) {
+				return new Err(
+					ErrType.PostNotFound,
+					`No post was found with the id: ${postId}`,
+				);
+			}
 
-		if (!post[0])
-			return new Err(
-				ErrType.PostNotFound,
-				'No post was found with the id: ' + postId,
-			);
+			// Likes abrufen
+			const [likesRows] = await conn.query(likesQuery, [postId]);
 
-		const likes = await new Promise((resolve, reject) => {
-			conn.query(likesQuery, postId, (err: any, results: any) => {
-				conn.release();
-				if (err) {
-					reject(
-						new Err(
-							ErrType.MySqlFailedQuery,
-							err.code + 'Database Query failed. Impossible to fetch the likes',
-						),
-					);
-					return;
-				}
-				resolve(results);
-			});
-		});
+			const DIR: Err | string = getPostDir((postRows as any)[0].Type);
+			if (typeof DIR !== 'string') return DIR;
 
-		const DIR: Err | string = getPostDir(post[0].Type);
+			const data = {
+				post: postRows,
+				likes: likesRows,
+			};
 
-		// if DIR is error, propagate
-		if (typeof DIR !== 'string') return DIR;
-
-		let data = {
-			post: post,
-			likes: likes,
-		};
-
-		// sendPostZipFile(res, postId, DIR as string, JSON.stringify(data));
-		res.json(data);
+			res.json(data);
+		} finally {
+			conn.release();
+		}
 	} catch (err) {
 		return err as Err;
 	}
@@ -152,23 +133,65 @@ export async function getAllPosts(
 	db: DbConnection,
 ) {
 	try {
-		const postQuery = `SELECT * FROM Posts`;
+		const postQuery = `
+  SELECT
+	p.Id,
+	p.UserId,
+	p.Type,
+	p.Title,
+	p.Description,
+	p.Content,
+	p.CreatedAt,
+	p.UpdatedAt,
+	p.SourceKey,   -- neu: der Key in deiner R2-Bucket
+	COALESCE(
+	  JSON_ARRAYAGG(
+		CASE WHEN c.Id IS NOT NULL THEN
+		  JSON_OBJECT(
+			'Id', c.Id,
+			'UserId', c.UserId,
+			'Message', c.Message,
+			'CreatedAt', c.CreatedAt,
+			'UpdatedAt', c.UpdatedAt
+		  )
+		END
+	  )
+	, JSON_ARRAY()
+	) AS comments
+  FROM Posts p
+  LEFT JOIN Comments c
+	ON c.PostId = p.Id
+  GROUP BY
+	p.Id, p.UserId, p.Type, p.Title, p.Description, p.Content,
+	p.CreatedAt, p.UpdatedAt, p.SourceKey
+  ORDER BY p.CreatedAt DESC;
+	  `;
 
 		const conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		const posts = await new Promise<any>((resolve, reject) => {
-			conn.query(postQuery, (err: any, results: any) => {
-				if (err) {
-					conn.release();
-					reject(new Err(ErrType.MySqlFailedQuery, err));
-					return;
-				}
-				resolve(results);
-			});
-		});
+		const [rows]: any = await conn.query(postQuery);
+		conn.release();
 
-		res.json(posts);
+		// Erzeuge die vollständige Bucket-URL
+		const base = process.env.CLOUDFLARE_BUCKET_URL;
+		// z. B. "https://pub-78edb5b6f0d946d28db91b59ddf775af.r2.dev"
+
+		const postsWithUrl = (rows as any[]).map((post) => ({
+			Id: post.Id,
+			UserId: post.UserId,
+			Type: post.Type,
+			Title: post.Title,
+			Description: post.Description,
+			Content: post.Content,
+			CreatedAt: post.CreatedAt,
+			UpdatedAt: post.UpdatedAt,
+			comments: post.comments,
+			// neu:
+			mediaUrl: `https://pub-78edb5b6f0d946d28db91b59ddf775af.r2.dev/${post.SourceKey}`,
+		}));
+
+		res.json(postsWithUrl);
 	} catch (err) {
 		return err as Err;
 	}
@@ -193,10 +216,62 @@ export async function getAllPosts(
 
 // upload post metadata in db after post source files. (video, cover, ...) uploaded to the cloud
 export async function uploadPost(
-	res: Response,
 	req: Request,
-	metadata: JSON,
+	res: Response,
+	metadata: sourceMetadataInterface,
 	db: DbConnection,
+	sourceKey: string,
 ) {
-	// upload meta data to db
+	const connOrErr = await db.connect();
+	if (connOrErr instanceof Err) throw connOrErr;
+	const conn = connOrErr;
+
+	console.log(metadata);
+
+	try {
+		await conn.beginTransaction();
+
+		// Step 1: Insert post
+		const insertPostQuery = `
+			INSERT INTO Posts (UserId, Type, Title, Description, CreatedAt, UpdatedAt, SourceKey)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
+		`;
+
+		const [postResult]: any = await conn.execute(insertPostQuery, [
+			metadata.userId,
+			metadata.type,
+			metadata.data.title,
+			metadata.data.description,
+			new Date(),
+			new Date(),
+			sourceKey,
+		]);
+
+		const postId = postResult.insertId;
+		const tags = metadata.data.tags || [];
+
+		// Step 2: Insert new tags (if needed)
+		if (tags.length > 0) {
+			const tagPlaceholders = tags.map(() => '(?)').join(',');
+			const insertTagsQuery = `INSERT IGNORE INTO Tags (Name) VALUES ${tagPlaceholders}`;
+			await conn.execute(insertTagsQuery, tags);
+		}
+
+		// Step 3: Link post with tags
+		if (tags.length > 0) {
+			const postTagValues = tags.flatMap((tag: any) => [postId, tag]);
+			const postTagPlaceholders = tags.map(() => '(?, ?)').join(',');
+			const insertPostTagsQuery = `INSERT INTO PostTags (PostId, TagName) VALUES ${postTagPlaceholders}`;
+			await conn.execute(insertPostTagsQuery, postTagValues);
+		}
+
+		await conn.commit();
+		res.status(200).json({ success: true, postId });
+	} catch (err) {
+		await conn.rollback();
+		console.error('Post upload failed:', err);
+		res.status(500).json({ error: 'Failed to upload post' });
+	} finally {
+		conn.release();
+	}
 }

@@ -56,6 +56,7 @@ CREATE TABLE Posts (
     Content TEXT,   -- markdown article
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    SourceKey VARCHAR(255) NULL,
     CONSTRAINT fk_post__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT chk_content_article CHECK (Type = 'Article' OR Content IS NULL)
 );
@@ -121,10 +122,38 @@ CREATE TABLE Reactions (
 
 -- TAGS
 CREATE TABLE Tags (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    PostId INT NOT NULL,
-    Tag VARCHAR(50) NOT NULL,
-    CONSTRAINT fk_tag__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+	Name VARCHAR(50) PRIMARY KEY
+);
+
+INSERT INTO Tags (Name) VALUES
+  ('Banger'),
+  ('World\'s First'),
+  ('World\'s Second'),
+  ('News'),
+  ('Challenge'),
+  ('Review'),
+  ('Tutorial'),
+  ('Guide'),
+  ('Story'),
+  ('Opinion'),
+  ('Thought'),
+  ('Experience'),
+  ('Information'),
+  ('Announcement'),
+  ('Reminder'),
+  ('Warning'),
+  ('Advertisement'),
+  ('Documentation'),
+  ('Question'),
+  ('Answer');
+
+
+CREATE TABLE PostTags (
+	PostId INT,
+	TagName VARCHAR(50),
+	PRIMARY KEY (PostId, TagName),
+    CONSTRAINT fk_tag__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+	FOREIGN KEY (TagName) REFERENCES Tags(Name) ON DELETE CASCADE
 );
 
 -- PARTECIPANTS
