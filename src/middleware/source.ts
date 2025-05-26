@@ -52,7 +52,11 @@ export async function generatePresignedUrl(
 	return { url, videoId, key };
 }
 
-export async function markSourceUploaded(videoId: string, db: DbConnection) {
+export async function markSourceUploaded(
+	videoId: string,
+	db: DbConnection,
+	// metadata ? : JSON for metadata.type execute db code for posts table...
+) {
 	const connOrErr = await db.connect();
 	if (connOrErr instanceof Err) throw connOrErr;
 	const conn = connOrErr;
