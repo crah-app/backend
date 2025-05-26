@@ -37,7 +37,7 @@ export async function getPost(
 ): Promise<Err | void> {
 	const postId: any | undefined = req.params.postId;
 	// add filter options to body
-	
+
 	try {
 		if (!postId)
 			return new Err(ErrType.RequestMissingProperty, 'Post ID is required');
@@ -132,21 +132,25 @@ export async function getAllPostsByUserId(
 		// get dummy data
 		// @beheadedben please work on this code so this function actually fetches from the database and not from my dummy data
 
-		const fileData = await getAllPostsFromDatabase(userId);
+		// const fileData = await getAllPostsFromDatabase(userId);
 
-		res.json(fileData);
+		// res.json(fileData);
+		res.json({});
 	} catch (err) {
 		return err as Err;
 	}
 }
 
-async function getAllPostsFromDatabase(userId: string) {
-	return posts.filter((post) => post.userId === userId);
-}
+// async function getAllPostsFromDatabase(userId: string) {
+// 	return posts.filter((post) => post.userId === userId);
+// }
 
-
-// get all posts 
-export async function getAllPosts(res:Response, req: Request, db : DbConnection) {
+// get all posts
+export async function getAllPosts(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
 	try {
 		const postQuery = `SELECT * FROM Posts`;
 
@@ -164,31 +168,35 @@ export async function getAllPosts(res:Response, req: Request, db : DbConnection)
 			});
 		});
 
-		res.json(posts)
-
+		res.json(posts);
 	} catch (err) {
 		return err as Err;
 	}
-};
+}
 
 // get post with filter options
 
 // get all posts from a specific rank
-export async function getAllPostsFromRank(res:Response, req: Request, db : DbConnection) {
-	res.json(posts);
-};
+// export async function getAllPostsFromRank(res:Response, req: Request, db : DbConnection) {
+// 	res.json(posts);
+// };
 
-// get one post from a specific rank
-export async function getPostFromRank(res:Response, req: Request, db : DbConnection) {
-	res.json(posts);
-};
+// // get one post from a specific rank
+// export async function getPostFromRank(res:Response, req: Request, db : DbConnection) {
+// 	res.json(posts);
+// };
 
-// get all posts from all friends by one client
-export async function getAllPostsFromFriends(res:Response, req: Request, db : DbConnection) {
-	res.json(posts);
-};
+// // get all posts from all friends by one client
+// export async function getAllPostsFromFriends(res:Response, req: Request, db : DbConnection) {
+// 	res.json(posts);
+// };
 
 // upload post metadata in db after post source files. (video, cover, ...) uploaded to the cloud
-export async function uploadPost(res: Response, req: Request, metadata: JSON, db:DbConnection) {
+export async function uploadPost(
+	res: Response,
+	req: Request,
+	metadata: JSON,
+	db: DbConnection,
+) {
 	// upload meta data to db
 }

@@ -52,10 +52,15 @@ export async function generatePresignedUrl(
 	return { url, videoId, key };
 }
 
+interface metadataInterface {
+	type: 'post';
+	data: any;
+}
+
 export async function markSourceUploaded(
 	videoId: string,
 	db: DbConnection,
-	// metadata ? : JSON for metadata.type execute db code for posts table...
+	metadata: metadataInterface, // for metadata.type execute db code for posts table...
 ) {
 	const connOrErr = await db.connect();
 	if (connOrErr instanceof Err) throw connOrErr;
@@ -67,10 +72,9 @@ export async function markSourceUploaded(
 		]);
 
 		// for uploading a post (its metadata not the files itself)
-		if(metadata.post) {
-			// execute post.ts middleware function for uploading post meta data	
-		};
-		
+		if (metadata.type == 'post') {
+			// execute post.ts middleware function for uploading post meta data
+		}
 	} finally {
 		conn.release();
 	}

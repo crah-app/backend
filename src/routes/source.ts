@@ -50,7 +50,10 @@ router.post(
 
 router.post('/mark-source-as-uploaded', async (req, res) => {
 	const { videoId } = req.body;
-	await markSourceUploaded(videoId, dbConnection);
+	await markSourceUploaded(videoId, dbConnection, {
+		type: 'post',
+		data: { videoId },
+	});
 	res.json({ success: true });
 });
 
