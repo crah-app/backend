@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // dummy data
-import posts from '../../dummy/JSON/posts.json' with { type: 'json' };
+// import posts from '../../dummy/JSON/posts.json' with { type: 'json' };
 
 // const typedPosts = posts as Post[];
 
@@ -36,7 +36,8 @@ export async function getPost(
 	db: DbConnection,
 ): Promise<Err | void> {
 	const postId: any | undefined = req.params.postId;
-
+	// add filter options to body
+	
 	try {
 		if (!postId)
 			return new Err(ErrType.RequestMissingProperty, 'Post ID is required');
@@ -170,6 +171,8 @@ export async function getAllPosts(res:Response, req: Request, db : DbConnection)
 	}
 };
 
+// get post with filter options
+
 // get all posts from a specific rank
 export async function getAllPostsFromRank(res:Response, req: Request, db : DbConnection) {
 	res.json(posts);
@@ -185,3 +188,7 @@ export async function getAllPostsFromFriends(res:Response, req: Request, db : Db
 	res.json(posts);
 };
 
+// upload post metadata in db after post source files. (video, cover, ...) uploaded to the cloud
+export async function uploadPost(res: Response, req: Request, metadata: JSON, db:DbConnection) {
+	// upload meta data to db
+}
