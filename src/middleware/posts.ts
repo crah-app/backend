@@ -134,65 +134,73 @@ export async function getAllPosts(
 ) {
 	try {
 		const postQuery = `
-  SELECT
-	p.Id,
-	p.UserId,
-	p.Type,
-	p.Title,
-	p.Description,
-	p.Content,
-	p.CreatedAt,
-	p.UpdatedAt,
-	p.SourceKey,   -- neu: der Key in deiner R2-Bucket
-	COALESCE(
-	  JSON_ARRAYAGG(
-		CASE WHEN c.Id IS NOT NULL THEN
-		  JSON_OBJECT(
-			'Id', c.Id,
-			'UserId', c.UserId,
-			'Message', c.Message,
-			'CreatedAt', c.CreatedAt,
-			'UpdatedAt', c.UpdatedAt
-		  )
-		END
-	  )
-	, JSON_ARRAY()
-	) AS comments
-  FROM Posts p
-  LEFT JOIN Comments c
-	ON c.PostId = p.Id
-  GROUP BY
-	p.Id, p.UserId, p.Type, p.Title, p.Description, p.Content,
-	p.CreatedAt, p.UpdatedAt, p.SourceKey
-  ORDER BY p.CreatedAt DESC;
+		SELECT
+		  p.Id,
+		  p.UserId,
+		  u.Name AS UserName,
+		  u.avatar AS UserAvatar,
+		  p.Type,
+		  p.Title,
+		  p.Description,
+		  p.Content,
+		  p.CreatedAt,
+		  p.UpdatedAt,
+		  p.SourceKey,
+		  IFNULL(l.likesCount, 0) AS likes,
+		  IFNULL(s.sharesCount, 0) AS shares,
+		  IFNULL(c.comments, JSON_ARRAY()) AS comments,
+		  e.width AS sourceWidth,
+  		  e.height AS sourceHeight,
+		  e.sourceRatio
+		FROM Posts p
+		LEFT JOIN Users u ON u.Id = p.UserId
+
+		LEFT JOIN Sources e ON e.\`key\` = p.SourceKey
+
+		-- Subquery for Likes
+		LEFT JOIN (
+		  SELECT PostId, COUNT(*) AS likesCount
+		  FROM Likes
+		  GROUP BY PostId
+		) l ON l.PostId = p.Id
+  
+		-- Subquery for Shares
+		LEFT JOIN (
+		  SELECT PostId, COUNT(*) AS sharesCount
+		  FROM Shares
+		  GROUP BY PostId
+		) s ON s.PostId = p.Id
+  
+		-- Subquery for Comments as JSON
+		LEFT JOIN (
+		  SELECT PostId,
+				 JSON_ARRAYAGG(
+				   JSON_OBJECT(
+					 'Id', Id,
+					 'UserId', UserId,
+					 'Message', Message,
+					 'CreatedAt', CreatedAt,
+					 'UpdatedAt', UpdatedAt
+				   )
+				 ) AS comments
+		  FROM Comments
+		  GROUP BY PostId
+		) c ON c.PostId = p.Id
+  
+		ORDER BY p.CreatedAt DESC
+		LIMIT 8;
 	  `;
 
 		const conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		const [rows]: any = await conn.query(postQuery);
+		const [rows] = await conn.execute(postQuery);
+
 		conn.release();
 
-		// Erzeuge die vollständige Bucket-URL
-		const base = process.env.CLOUDFLARE_BUCKET_URL;
-		// z. B. "https://pub-78edb5b6f0d946d28db91b59ddf775af.r2.dev"
-
-		const postsWithUrl = (rows as any[]).map((post) => ({
-			Id: post.Id,
-			UserId: post.UserId,
-			Type: post.Type,
-			Title: post.Title,
-			Description: post.Description,
-			Content: post.Content,
-			CreatedAt: post.CreatedAt,
-			UpdatedAt: post.UpdatedAt,
-			comments: post.comments,
-			// neu:
-			mediaUrl: `https://pub-78edb5b6f0d946d28db91b59ddf775af.r2.dev/${post.SourceKey}`,
-		}));
-
-		res.json(postsWithUrl);
+		res.json(rows);
 	} catch (err) {
+		res.status(500).json({ error: 'Failed to load all posts', msg: err });
 		return err as Err;
 	}
 }
@@ -226,7 +234,7 @@ export async function uploadPost(
 	if (connOrErr instanceof Err) throw connOrErr;
 	const conn = connOrErr;
 
-	console.log(metadata);
+	console.log('metadata:', metadata);
 
 	try {
 		await conn.beginTransaction();

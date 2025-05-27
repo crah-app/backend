@@ -66,15 +66,14 @@ export async function markSourceUploaded(
 	if (connOrErr instanceof Err) throw connOrErr;
 	const conn = connOrErr;
 
-	console.log('gjaergarsdfiogjlfgdfogagfegasdf', metadata, videoId);
-
 	try {
-		await conn.execute("UPDATE sources SET status = 'uploaded' WHERE id = ?", [
-			videoId,
-		]);
+		await conn.execute(
+			"UPDATE Sources SET status = 'uploaded', sourceRatio = ? WHERE id = ?",
+			[metadata.data.ratio, videoId],
+		);
 
 		// for uploading a post (its metadata not the files itself)
-		if (metadata.type == 'Post') {
+		if (metadata.type === 'Video') {
 			uploadPost(req, res, metadata, db, sourceKey);
 			// execute post.ts middleware function for uploading post meta data
 		}

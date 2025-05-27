@@ -41,8 +41,8 @@ router.post(
 			contentType,
 			dbConnection,
 			duration,
-			height,
 			width,
+			height,
 		);
 		res.json(result);
 	},

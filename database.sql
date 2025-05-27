@@ -50,7 +50,7 @@ CREATE TABLE Follows (
 CREATE TABLE Posts (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     UserId VARCHAR(255) NOT NULL,
-    Type ENUM('Article', 'Video', 'Post', 'Music') NOT NULL,
+    Type ENUM('Article', 'Video', 'Image', 'Text', 'Music') NOT NULL,
     Title VARCHAR(100),
     Description TEXT NOT NULL,
     Content TEXT,   -- markdown article
@@ -80,6 +80,17 @@ CREATE TABLE Likes (
     CONSTRAINT fk_like__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT fk_like__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
+
+-- SHARES
+CREATE TABLE Shares (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    PostId INT NOT NULL,
+    UserId VARCHAR(255) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_share__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    CONSTRAINT fk_share__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
 
 -- COMMENTS
 CREATE TABLE Comments (
@@ -157,7 +168,7 @@ CREATE TABLE PostTags (
 );
 
 -- PARTECIPANTS
-CREATE TABLE Partecipants (
+CREATE TABLE Participants (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     PostId INT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
@@ -334,6 +345,7 @@ CREATE TABLE Sources (
   duration INT NOT NULL,
   width INT NOT NULL,
   height INT NOT NULL,
+  sourceRatio varchar(10) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

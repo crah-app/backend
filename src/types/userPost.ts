@@ -78,5 +78,6 @@ export enum UserPostType {
 	video = 'Video', // A video post
 	post = 'Post', // a text or image post or a combination of text and image
 	article = 'Article', // An article
-	music = 'Music' // A beat or song
+	music = 'Music', // A beat or song
+	text = 'Text', // small text. Kinda like a tweet
 }
