@@ -4,6 +4,7 @@ import {
 	deleteTrick,
 	postTrick,
 	getTrick,
+	getAllTricks,
 } from '../middleware/tricks.js';
 import { errorHandler, Err } from '../constants/errors.js';
 import { dbConnection } from '../constants/dbConnection.js';
@@ -14,6 +15,11 @@ const secret = process.env.CLERK_PEM_PUBLIC_KEY!;
 router.use(express.json());
 
 export default router;
+
+/* Get all tricks */
+router.get('/all', async (req, res) => {
+	errorHandler(await getAllTricks(req, res, dbConnection), res);
+});
 
 router
 	.route('/')

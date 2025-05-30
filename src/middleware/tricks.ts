@@ -12,6 +12,39 @@ export interface AllTricksData {
 	types: TrickType[];
 }
 
+/* Get all tricks from db */
+export async function getAllTricks(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+): Promise<Err | void> {
+	try {
+		let conn = await db.connect();
+		if (conn instanceof Err) return conn;
+
+		const query = `
+		SELECT 
+			a.Name, 
+			a.DefaultPoints, 
+			a.Costum, 
+			t.Type
+		FROM alltricks a
+		LEFT JOIN (
+			SELECT AllTricksName, \`Type\` 
+			FROM TrickTypes
+		) t ON t.AllTricksName = a.Name;
+		`;
+
+		const [rows] = await conn.query(query);
+
+		conn.release();
+		res.status(200).json(rows);
+	} catch (err) {
+		res.status(500).json({ success: false, message: err });
+		return err as Err;
+	}
+}
+
 /* 
 	Get all tricks from user
 */
