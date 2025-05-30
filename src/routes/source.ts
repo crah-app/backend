@@ -16,10 +16,6 @@ router.use(express.json());
 	Therefore client sends metadata to predict a video upload
 */
 
-router.get('/', (req, res) => {
-	res.json({ foo: 'bar' });
-});
-
 router.post(
 	'/create-upload',
 	// ClerkExpressWithAuth() as unknown as express.RequestHandler,
@@ -31,9 +27,22 @@ router.post(
 			height,
 			width,
 			contentType /* MIME-type */,
+			extra_source,
+			extra_source_filename,
+			extra_source_content_type,
 		} = req.body;
 
-		console.log(userId, filename, duration, height, width, contentType);
+		console.log(
+			userId,
+			filename,
+			duration,
+			height,
+			width,
+			contentType,
+			extra_source,
+			extra_source_filename,
+			extra_source_content_type,
+		);
 
 		const result = await generatePresignedUrl(
 			userId,
@@ -43,14 +52,32 @@ router.post(
 			duration,
 			width,
 			height,
+
+			// extra source meta data
+			extra_source,
+			extra_source_filename,
+			extra_source_content_type,
 		);
 		res.json(result);
 	},
 );
 
 router.post('/mark-source-as-uploaded', async (req, res) => {
-	const { videoId, metadata, key } = req.body;
-	await markSourceUploaded(req, res, videoId, dbConnection, metadata, key);
+	const {
+		sourceId,
+		metadata,
+		key,
+		extra_file_key /* in case a second source is associated with this source. F.ex a cover for a video post */,
+	} = req.body;
+	await markSourceUploaded(
+		req,
+		res,
+		sourceId,
+		dbConnection,
+		metadata,
+		key,
+		extra_file_key,
+	);
 });
 
 export default router;

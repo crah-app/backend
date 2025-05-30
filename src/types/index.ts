@@ -5,3 +5,8 @@ export interface sourceMetadataInterface {
 	userId: string;
 	data: any;
 }
+
+export interface PhotoFile {
+	width: number;
+	height: number;
+}

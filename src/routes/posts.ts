@@ -5,7 +5,7 @@ import {
 	getAllPostsByUserId,
 	// getAllPostsFromFriends,
 	// getAllPostsFromRank,
-	getPost,
+	getPostById,
 	// getPostFromRank,
 } from '../middleware/posts.js';
 import { dbConnection } from '../constants/dbConnection.js';
@@ -24,7 +24,7 @@ returns a post
 */
 
 router.get('/post/:postId', async (req: Request, res: Response) => {
-	errorHandler(await getPost(req, res, dbConnection), res);
+	errorHandler(await getPostById(res, req, dbConnection), res);
 });
 
 /* 
