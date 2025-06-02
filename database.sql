@@ -261,7 +261,8 @@ CREATE TABLE AllTricks (
     'Impossible',
     'Goated',
     `Potential World's First`
-) NOT NULL
+) NOT NULL,
+	SecondName VARCHAR(100) DEFAULT NULL;
 );
 
 CREATE TABLE TrickTypes (
@@ -271,10 +272,146 @@ CREATE TABLE TrickTypes (
     CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
-INSERT INTO AllTricks (Name, DefaultPoints, Difficulty) VALUES
+INSERT INTO AllTricks (Name, DefaultPoints, Difficulty, SecondName) VALUES
 ('Kickless', 300, "Normal"),
-('Bri flip', 200, "Normal");
 
+-- tailwhips
+("Tailwhip", 100, "Normal"),
+("Heelwhip", 100, "Normal"),
+("Double Whip", 100, "Normal"),
+("Triple Whip", 100, "Normal"),
+("Quad Whip", 100, "Normal"),
+("Quint Whip", 100, "Normal"),
+("Sextuple Whip", 100, "Normal"),
+("Septuple Whip", 100, "Normal"),
+("Octuple Whip", 100, "Normal"),
+("Nonuple Whip", 100, "Normal"),
+("Decuple Whip", 100, "Normal"),
+
+-- heelwhips
+("Double Heelwhip", 100, "Normal"),
+("Triple Heelwhip", 100, "Normal"),
+("Quadruple Heelwhip", 100, "Normal"),
+("Quintuple Heelwhip", 100, "Normal"),
+("Sextuple Heelwhip", 100, "Normal"),
+("Septuple Heelwhip", 100, "Normal"),
+("Octuple Heelwhip", 100, "Normal"),
+("Nonuple Heelwhip", 100, "Normal"),
+("Decuple Heelwhip", 100, "Normal"),
+
+-- finger whips
+("Fingerwhip", 100, "Normal"),
+("Mc Whip", 100, "Normal"),
+('Whip Fingerwhip', 200, "Normal"),
+('Double Fingerwhip', 200, "Normal"),
+('Triple Fingerwhip', 200, "Normal"),
+('Quad Fingerwhip', 200, "Normal"),
+('Quint Fingerwhip', 200, "Normal"),
+('Sextuple Fingerwhip', 200, "Normal"),
+('Septuple Fingerwhip', 200, "Normal"),
+('Double Mc Whip', 200, "Normal"),
+('Triple Mc Whip', 200, "Normal"),
+('Quadruple Mc Whip', 200, "Normal"),
+('Quintuple Mc Whip', 200, "Normal"),
+('Fingerwhip Bar', 200, "Normal", "Fingerwhip to Late Barspin"),
+('Fingerwhip Rotor', 200, "Normal"),
+('Fullwhip to Fingerwhip', 200, "Normal"),
+('Rotorwhip to Fingerwhip', 200, "Normal"),
+('Fingerwhip Fingerwhip', 200, "Normal"),
+('Mc Whip to Fingerwhip', 200, "Normal"),
+('Fingerwhip to Mc Whip', 200, "Normal"),
+('Heel to Fingerwhip', 200, "Normal", "Heelwhip to Fingerwhip/ Heel Finger Rewind"),
+('Barspin to Fingerwhip', 200, "Normal"),
+('Oppo Barspin to Fingerwhip', 200, "Normal", "Oppo Bar Finger"),
+('Double Whip to Fingerwwhip', 200, "Normal")
+('Oppo Fingerwhip', 200, "Normal"),,
+('Fingerwhip kick Heelwhup', 200, "Normal", "Fingerwhip Rewind"),
+('Fingerwhip to Front Bri', 200, "Normal"),
+('Fingerwhip to Buttercup', 200, "Normal"),
+('Finger Rotortwist', 200, "Normal"),
+('Full Untiwst Finger', 200, "Normal"),
+('Rotor Bartwist Finger', 200, "Normal"),
+	
+-- simple overheads
+('Briflip', 200, "Normal"),
+("Umbrella", 100, "Normal", "Mc Flip"),
+("Front Briflip", 100, "Normal", "Inward"),
+("Front Scooter Flip", 100, "Frontscoot"),
+("Back Scooter Flip", 100, "Normal", "Backscoot"),
+('Dono Flip', 200, "Normal"),
+('Back Dono Flip', 200, "Normal"),
+('Dragon Briflip', 200, "Normal", "Dragon Briflip"),
+('Corona Flip', 200, "Normal"),
+('Funky Flip', 200, "Normal"),
+('STD Flip', 200, "Korpela Flip"),
+('Whip Backscoot', 200, "Normal"),
+	
+('Whip Backscoot Whip', 200, "Normal", "Backscootercup"),
+('Whip Frontscoot Whip', 200, "Normal", "Frontscootercup"),
+('Whip Donoflip Whip', 200, "Normal", "Donocup"),
+('Funky Flip whip', 200, "Normal"),
+('Whip Inward', 200, "Normal", "Whip Front Bri"),
+('Inwardcup', 200, "Normal", "Whip Frontbri Whip"),
+	
+-- hard overheads
+("Spanner Flip", 100, "Normal", "Pot Flip"),
+("Buttercup", 100, "Normal"),
+("Bri Whip", 100, "Normal"),
+("Bri Double Whip", 100, "Normal"),
+("Bri Triple Whip", 100, "Normal"),
+("Bri Quad Whip", 100, "Normal"),
+("Bri Quint Whip", 100, "Normal"),
+("Nothing Front Scoot", 100, "Normal"),
+("Deckgrab Nothing Front Scoot", 100, "Normal"),
+("Fingerblast", 100, "Normal", "Palm Flip"),
+("Whip Fingerblast", 100, "Normal", "Whip Palm Flip"),
+("Capron Flip", 100, "Normal"),
+("Deckgrab to Frontscoot", 100, "Normal"),
+
+-- complex overheads
+('Donotwist', 200, "Normal"),
+('Fingerblast Twist', 200, "Normal"),
+('Whip Fingerblast Twist', 200, "Normal"),
+	
+-- 360 overheads
+('360 Briflip', 200, "Normal"),
+('360 Umbrella', 200, "Normal"),
+('360 Whip Umbrella', 200, "Normal"),
+('360 Buttercup', 200, "Normal"),
+('360 Front Bri', 200, "Normal", "360 Inward"),
+('360 Whip Front Scooter Flip', 200, "360 whip front"),
+('360 Front Scooter Flip', 200, "360 Frontscoot"),
+('360 Whip Dono Flip', 200, "Normal"),
+('360 Dono Flip', 200, "Normal"),
+('360 Whip Buttercup', 200, "Normal"),
+('360 Funky Flip', 200, "Normal"),
+('360 Capron Flip', 200, "Normal"),
+('360 Whip Fingerblast', 200, "Normal"),
+('360 Fingerblast', 200, "Normal"),
+
+-- 360 tricks
+('360 Barspin', 200, "Normal"),
+('360 Tailwhip', 200, "Normal"),
+
+
+('360 Whip Backscoot Whip', 200, "Normal", "360 Backscootercup"),
+('360 Whip Frontscoot Whip', 200, "Normal", "360 Frontscootercup"),
+('360 Whip Donoflip Whip', 200, "Normal", "360 Donocup"),
+('360 Funky Flip whip', 200, "Normal"),
+('360 Whip Inward', 200, "Normal", "360 Whip Front Bri"),
+('360 Inwardcup', 200, "Normal", "360 Whip Frontbri Whip"),
+
+('Donofip Deckgrab', 200, "Normal"),
+('Britwist', 200, "Normal"),
+('Deckgrab Britwist', 200, "Normal"),
+	
+-- body flips/variations
+('Backflip', 200, "Normal"),
+('Frontflip', 200, "Normal"),
+('Flair', 200, "Normal"),
+('Front Flair', 200, "Normal"),
+
+	
 INSERT INTO TrickTypes (AllTricksName, Type) VALUES
 ('Kickless', 'Rewind'),
 ('Bri flip', 'Overhead');
