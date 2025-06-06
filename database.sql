@@ -336,7 +336,7 @@ CREATE TABLE Messages (
     quickReplies JSON,                             
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,  
     `type` ENUM('text', 'rider', 'trick') DEFAULT 'text',
-    trickId INT DEFAULT NULL,                   
+    trickId varchar(100) DEFAULT NULL,                   
     riderId VARCHAR(255) DEFAULT NULL,
     isReply boolean DEFAULT FALSE,
     replyToMessageId varchar(36) DEFAULT NULL,          
