@@ -6,6 +6,7 @@ import {
 	// getAllPostsFromFriends,
 	// getAllPostsFromRank,
 	getPostById,
+	setPostLikeStatus,
 	// getPostFromRank,
 } from '../middleware/posts.js';
 import { dbConnection } from '../constants/dbConnection.js';
@@ -59,7 +60,7 @@ curl http://localhost:4000/api/posts/all
 returns all posts
 */
 
-router.get('/all', async (req: Request, res: Response) => {
+router.get('/all/currentUser/:userId', async (req: Request, res: Response) => {
 	errorHandler(await getAllPosts(res, req, dbConnection), res);
 });
 
@@ -85,4 +86,9 @@ returns one post from the a rank
 
 router.get('/rank/:rank/:postId', async (req: Request, res: Response) => {
 	// errorHandler(await getPostFromRank(res, req, dbConnection), res);
+});
+
+// user likes a post
+router.post('post/:postId/like', async (req: Request, res: Response) => {
+	errorHandler(await setPostLikeStatus(res, req, dbConnection), res);
 });

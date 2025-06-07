@@ -151,3 +151,31 @@ export async function uploadPost(
 		conn.release();
 	}
 }
+
+// modify like status of post
+export async function setPostLikeStatus(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	const connOrErr = await db.connect();
+	if (connOrErr instanceof Err) throw connOrErr;
+	const conn = connOrErr;
+
+	try {
+		const postId: number = Number(req.params.postId);
+		const likeStatus: boolean = req.body.userLikedPost;
+
+		const query = `
+			
+		`;
+
+		const [rows] = await conn.query(query, [postId]);
+
+		res.json(rows);
+	} catch (err) {
+		console.warn('Failed modifying like status of post:', err);
+	} finally {
+		conn.release();
+	}
+}

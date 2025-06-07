@@ -51,6 +51,7 @@ export async function getUserStats(
 		const [rows] = await conn.query(query, [id]);
 
 		res.json(rows);
+		conn.release();
 	} catch (err) {
 		res.json({ err: err });
 	}

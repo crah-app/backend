@@ -16,7 +16,8 @@ export const allPostsQuery = `
           IFNULL(c.comments, JSON_ARRAY()) AS comments,
           e.width AS sourceWidth,
           e.height AS sourceHeight,
-          e.sourceRatio
+          e.sourceRatio,
+          EXISTS(SELECT 1 FROM Likes l WHERE l.PostId = p.Id AND l.UserId = ?) AS liked
         FROM Posts p
         LEFT JOIN Users u ON u.Id = p.UserId
 
@@ -75,7 +76,8 @@ export const allPostsQueryByUserId = `
           IFNULL(c.comments, JSON_ARRAY()) AS comments,
           e.width AS sourceWidth,
           e.height AS sourceHeight,
-          e.sourceRatio
+          e.sourceRatio,
+          EXISTS(SELECT 1 FROM Likes l WHERE l.PostId = p.Id AND l.UserId = ?) AS liked
         FROM Posts p 
         LEFT JOIN Users u ON u.Id = p.UserId
 
@@ -135,7 +137,8 @@ export const getPostByPostId = `
           IFNULL(c.comments, JSON_ARRAY()) AS comments,
           e.width AS sourceWidth,
           e.height AS sourceHeight,
-          e.sourceRatio
+          e.sourceRatio,
+          EXISTS(SELECT 1 FROM Likes l WHERE l.PostId = p.Id AND l.UserId = ?) AS liked
         FROM Posts p 
         LEFT JOIN Users u ON u.Id = p.UserId
 
