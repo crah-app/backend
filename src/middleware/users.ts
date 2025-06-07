@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { createClerkClient } from '@clerk/backend';
-import { Err } from '../constants/errors.js';
+import { Err, ErrType } from '../constants/errors.js';
 import DbConnection from './../constants/dbConnection.js';
+import { Pool } from 'mysql2';
 
 // export to /types
 type UserSetting = 'setting01' | 'setting02';
@@ -17,13 +18,42 @@ export async function getAllUsers(res: Response) {
 	res.json(allUsers.data);
 }
 
-export async function getUserStats(req: Request, res: Response) {
+export async function getUserStats(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
 	const id = req.params.userId;
 
-	// outputs a json with all users and their data
-	const userStats = await clerkClient.users.getUser(id);
+	try {
+		if (!id)
+			return new Err(ErrType.RequestMissingProperty, 'User ID is required');
 
-	res.json(userStats);
+		const conn = await db.connect();
+		if (conn instanceof Err) return conn;
+
+		// sql query to get user information to display in profile
+		const query = `
+			SELECT 
+			u.*, 
+			COUNT(p.Id) AS posts,
+			(SELECT COUNT(*) FROM Friends f WHERE f.UserAId = u.Id OR f.UserBId = u.Id) AS friendCount,
+			(SELECT COUNT(*) FROM Follows f WHERE f.FollowedId = u.Id) AS followerCount
+			FROM users u
+			LEFT JOIN posts p ON p.UserId = u.Id
+			WHERE u.Id = ?
+			GROUP BY u.Id;
+		`;
+
+		// outputs a json with all users and their data
+		// const userStats = await clerkClient.users.getUser(id);
+
+		const [rows] = await conn.query(query, [id]);
+
+		res.json(rows);
+	} catch (err) {
+		res.json({ err: err });
+	}
 }
 
 // user can alter clerk and crah specific information

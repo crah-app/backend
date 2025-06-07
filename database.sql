@@ -12,7 +12,11 @@ CREATE TABLE Users (
 
     -- abstract information
     chatGreeting varchar(255) DEFAULT NULL,
-    `rank` ENUM('Unknown', 'Wood', 'Bronze', 'Silver', 'Gold', 'Diamond', 'Platin', 'Legendary') NOT NULL
+    profileDescription varchar(255) DEFAULT NULL,
+    riderType ENUM("Park Rider", "Street Rider", "Flat Rider") DEFAULT NULL,
+    `rank` ENUM('Wood', 'Bronze', 'Silver', 'Gold', 'Diamond', 'Platin', 'Legendary') NOT NULL,
+    rankPoints INT DEFAULT 0,
+    level INT DEFAULT 0,
 
     PRIMARY KEY (Id)
 );

@@ -25,7 +25,7 @@ curl http://localhost:4000/api/users/1
 */
 
 router.get('/:userId', async (req: Request, res: Response) => {
-	errorHandler(await getUserStats(req, res), res);
+	errorHandler(await getUserStats(req, res, dbConnection), res);
 });
 
 export default router;
