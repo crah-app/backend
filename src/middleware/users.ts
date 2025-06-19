@@ -7,11 +7,12 @@ import { Pool } from 'mysql2';
 // export to /types
 type UserSetting = 'setting01' | 'setting02';
 
-const clerkClient = createClerkClient({
-	secretKey: process.env.CLERK_SECRET_KEY,
-});
-
 export async function getAllUsers(res: Response) {
+	const clerkClient = createClerkClient({
+		secretKey: process.env.CLERK_SECRET_KEY,
+		publishableKey: process.env.CLERK_PUBLIC_KEY,
+	});
+
 	// outputs a json with all users and their data
 	const allUsers = await clerkClient.users.getUserList();
 

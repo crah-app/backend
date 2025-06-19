@@ -1,11 +1,16 @@
 import { Err, ErrType } from './../constants/errors.js';
 import { Request, Response } from 'express';
 import DbConnection from './../constants/dbConnection.js';
-import { verifyJwt } from './auth.js';
+import { verifyJwt, verifySessionToken } from './auth.js';
 import { Trick, TrickDescription, TrickType } from '../trickLogic/trick.js';
 import { Spot } from '../trickLogic/spot.js';
 import { Pool, PoolConnection } from 'mysql2/promise';
-import { AllowlistIdentifier } from '@clerk/backend';
+import {
+	AllowlistIdentifier,
+	createClerkClient,
+	verifyToken,
+} from '@clerk/backend';
+import { createIsomorphicRequest } from '@clerk/clerk-sdk-node';
 
 export interface AllTricksData {
 	defaultPoints: number;
@@ -349,6 +354,47 @@ export async function getTrick(
 		conn.release();
 		res.json(trick);
 	} catch (err) {
+		return err as Err;
+	}
+}
+
+// current-user initiaizes/updates his (5) best tricks
+export async function setCurrentUserTricks(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const url_userId = req.params.userId;
+	const tricks = req.body.tricks;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		const userId = sessionToken.sub;
+
+		if (userId !== url_userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		if (!tricks) {
+			console.warn('Trick is required');
+			return new Err(ErrType.RequestMissingProperty, 'Tricks is required');
+		}
+
+		const query = `
+			Select * from users;
+		`;
+
+		let conn = await db.connect();
+		if (conn instanceof Err) return conn;
+
+		const [rows] = await conn.query(query, []);
+
+		conn.release();
+		res.status(200);
+		res.json(rows);
+	} catch (err) {
+		res.status(404);
+		res.json({ error: err });
 		return err as Err;
 	}
 }

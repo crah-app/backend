@@ -6,7 +6,7 @@ import {
 import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
 import DbConnection, { dbConnection } from '../constants/dbConnection.js';
 
-const secret = process.env.CLERK_PEM_PUBLIC_KEY!;
+const secret = process.env.CLERK_SECRET_KEY!;
 const router = express.Router({ mergeParams: true });
 
 router.use(express.json());

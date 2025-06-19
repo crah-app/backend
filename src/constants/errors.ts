@@ -41,7 +41,8 @@ export enum ErrType {
 	JwtTokenExpired,
 	RequestMissingProperty,
 	InvalidPostType,
-	PostNotFound
+	PostNotFound,
+	UnauthorizedAccess,
 }
 
 export namespace ErrType {
@@ -59,6 +60,8 @@ export namespace ErrType {
 				return 401; // Unauthorized
 			case ErrType.JwtTokenExpired:
 				return 401; // Unauthorized
+			case ErrType.UnauthorizedAccess:
+				return 404; // Unauthorized
 			case ErrType.RequestMissingProperty:
 				return 400; // Bad Request
 			case ErrType.InvalidPostType:
