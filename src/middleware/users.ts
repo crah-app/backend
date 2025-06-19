@@ -87,3 +87,32 @@ export async function alterSetting01(
 	db: DbConnection,
 	setting: UserSetting,
 ) {}
+
+// check wether username is already taken when current-user wants to update/initialize his username
+export async function isUsernameDuplicate(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const username = req.params.userName;
+
+	try {
+		if (!username)
+			return new Err(ErrType.RequestMissingProperty, 'Username is required');
+
+		const conn = await db.connect();
+		if (conn instanceof Err) return conn;
+
+		const query = `
+			SELECT Id FROM users where Name = ?
+		`;
+
+		const [rows] = await conn.query(query, [username]);
+
+		res.status(200);
+		res.json(rows);
+		conn.release();
+	} catch (err) {
+		res.json({ err: err });
+	}
+}
