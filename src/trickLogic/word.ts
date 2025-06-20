@@ -1,5 +1,6 @@
-import { TrickPart, TrickType } from './trick.js';
-import list = require("./../../public/tricks/words.json");
+import { TrickPart } from './trick.js';
+import list = require('./../../public/tricks/words.json');
+import { TrickType } from '../types/tricklogic.js';
 
 export class Word implements TrickPart {
 	word: string;
@@ -11,13 +12,13 @@ export class Word implements TrickPart {
 	type?: TrickType;
 
 	constructor(word: string) {
-		this.word = word;
+		this.word = word.toLowerCase();
 
-		for(const w of list.words) {
-			if(word === w.word) {
+		for (const w of list.words) {
+			if (word.toLowerCase() === w.word.toLowerCase()) {
 				this.points = w.points ?? 0;
 				this.percentageAfter = w.percentageAfter ?? 0;
-				this.percentageBefore = w.percentageBefore ?? 0; 
+				this.percentageBefore = w.percentageBefore ?? 0;
 				this.connect = w.connect ?? false;
 				this.applyToWhole = w.applyToWhole ?? false;
 				if (w.type) this.type = TrickType[w.type as keyof typeof TrickType];
@@ -25,7 +26,7 @@ export class Word implements TrickPart {
 			}
 		}
 
-		console.warn("Unrecognised word: " + word);
+		console.warn('Unrecognised word: ' + word, word.toLowerCase());
 	}
 
 	getPercentageBefore(): number {
@@ -56,4 +57,3 @@ export class Word implements TrickPart {
 		return [this.word];
 	}
 }
-

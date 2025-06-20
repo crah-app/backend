@@ -14,7 +14,7 @@ CREATE TABLE Users (
     chatGreeting varchar(255) DEFAULT NULL,
     profileDescription varchar(255) DEFAULT NULL,
     riderType ENUM("Park Rider", "Street Rider", "Flat Rider") DEFAULT NULL,
-    `rank` ENUM('Wood', 'Bronze', 'Silver', 'Gold', 'Diamond', 'Platin', 'Legendary') NOT NULL,
+    `rank` ENUM('Wood', 'Bronze', 'Silver', 'Gold', 'Platinum','Diamond', 'Legendary') NOT NULL,
     rankPoints INT DEFAULT 0,
     level INT DEFAULT 0,
 
@@ -254,19 +254,18 @@ CREATE TABLE AllTricks (
     DefaultPoints INT NOT NULL, -- points without the percentage increase of the spot
     Costum BOOLEAN DEFAULT FALSE,
     Difficulty ENUM(
-    'Novice',
     'Beginner',
     'Normal',
     'Intermediate',
     'Advanced',
     'Hard',
     'Very Hard',
-    'Monster',
+    'Expert',
     'Impossible',
     'Goated',
-    "Potential World's First"
+    'Legendary'
 ) NOT NULL,
-	SecondName VARCHAR(100) DEFAULT NULL
+	SecondName VARCHAR(100) DEFAULT NULL,
 );
 
 CREATE TABLE TrickTypes (
@@ -611,10 +610,21 @@ CREATE TABLE Tricks (
     Points INT NOT NULL,
     CONSTRAINT fk_trick__all_trick FOREIGN KEY (Name) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
 );
--- SPOTS
+
+-- GENERAL SPOTS (general type of spot)
+CREATE TABLE GeneralSpots (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    TrickId INT NOT NULL,
+    Spot ENUM('Park', 'Street', 'Flat') NOT NULL,
+    Date DATE,
+    CONSTRAINT fk_general_spot__trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+-- SPOTS (very specific spots. Not really used in the frontend application by the current-user)
 CREATE TABLE Spots (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     TrickId INT NOT NULL,
+    GeneralSpot ENUM('Park', 'Street', 'Flat') NOT NULL,
     Spot ENUM('Flat', 'OffLedge', 'DropIn', 'Flyout', 'Air') NOT NULL,
     Date DATE,
     CONSTRAINT fk_spot__trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT

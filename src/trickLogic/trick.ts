@@ -1,17 +1,14 @@
 import { Block } from './block.js';
 import { Word } from './word.js';
-import { Spot } from './spot.js';
-import { AllTricksData } from '../middleware/tricks.js';
+import { GeneralSpot } from './spot.js';
 import { Err, ErrType } from '../constants/errors.js';
+import {
+	AllTricksData,
+	TrickDifficulty,
+	TrickType,
+} from '../types/tricklogic.js';
 
 export type Idx = number;
-
-export enum TrickType {
-	Balance,
-	Rewind,
-	Overhead,
-	Grab
-}
 
 export interface TrickPart {
 	points: number;
@@ -25,28 +22,40 @@ export interface TrickPart {
 }
 
 export class Trick {
-	name: string;
-	spots: Array<{spot: Spot, date?: Date}>;
-	points: number;
-	defaultPoints: number;
-	types: TrickType[] = [];
+	Name: string;
+	Spots: Array<{ spot: GeneralSpot; date?: Date }>;
+	Points: number;
+	DefaultPoints: number;
+	Types: TrickType[] = [];
+	Costum: boolean;
+	Difficulty: TrickDifficulty;
 
 	constructor(description: TrickDescription, allTricksData?: AllTricksData) {
-		this.name = description.parts.join(" ");
-		this.spots = description.spots;
-		
+		this.Name = description.parts.join(' ');
+		this.Spots = description.spots;
+
+		// boiler plate
+		this.Costum = false;
+		this.Difficulty = TrickDifficulty.Beginner;
+
 		if (allTricksData !== undefined) {
-			this.defaultPoints = allTricksData.defaultPoints;
-			this.points = allTricksData.defaultPoints + allTricksData.defaultPoints * Spot.getMaximumPercentage(description.spots);	
+			this.DefaultPoints = allTricksData.DefaultPoints;
+			this.Points =
+				allTricksData.DefaultPoints +
+				allTricksData.DefaultPoints *
+					GeneralSpot.getMaximumPercentage(description.spots);
+
+			this.Costum = allTricksData.Costum;
+			this.Difficulty = allTricksData.Difficulty;
 			return;
 		}
-		
+
 		let words: Array<Word> = description.toWords();
 		let trickParts: Array<TrickPart> = [];
 		let blockWords: Array<Word> = [];
 
 		for (const word of words) {
-			if (word.type) this.types.push(word.type);
+			if (word.type) this.Types.push(word.type);
 			if (word.applyToWhole) {
 				trickParts.push(word);
 			} else {
@@ -71,9 +80,11 @@ export class Trick {
 			}
 		}
 
-		this.assertBlockFound(idxFirstBlock); 
-		this.defaultPoints = this.calculateDefaultPoints(trickParts, idxFirstBlock);
-		this.points = this.defaultPoints + this.defaultPoints * Spot.getMaximumPercentage(this.spots);
+		this.assertBlockFound(idxFirstBlock);
+		this.DefaultPoints = this.calculateDefaultPoints(trickParts, idxFirstBlock);
+		this.Points =
+			this.DefaultPoints +
+			this.DefaultPoints * GeneralSpot.getMaximumPercentage(this.Spots);
 	}
 
 	private assertBlockFound(
@@ -108,17 +119,17 @@ export class Trick {
 	}
 
 	getPoints(): number {
-		return this.points;
+		return this.Points;
 	}
 
-	landedAtSpot(spot: Spot): boolean {
-		return this.spots.some(entry => entry.spot === spot);
+	landedAtSpot(spot: GeneralSpot): boolean {
+		return this.Spots.some((entry) => entry.spot === spot);
 	}
 
 	printToConsole(): void {
 		console.log('---------------- TRICK ----------------');
 		console.log(this.getName());
-		console.log(this.spots.map((s) => Spot[s.spot]));
+		console.log(this.Spots.map((s) => GeneralSpot[s.spot]));
 		console.log('\n    Total Points: ' + this.getPoints());
 		console.log('---------------------------------------\n');
 	}
@@ -128,13 +139,13 @@ export class Trick {
 	}
 
 	getName(): string {
-		return this.name;
+		return this.Name;
 	}
 
 	getOldestDate(): Date | undefined {
-		let current = this.spots[0].date; 
+		let current = this.Spots[0].date;
 
-		this.spots.forEach(s => {
+		this.Spots.forEach((s) => {
 			if (current == undefined) current = s.date;
 
 			if (s.date != undefined) {
@@ -148,9 +159,9 @@ export class Trick {
 	}
 
 	getLatestDate(): Date | undefined {
-		let current = this.spots[0].date; 
+		let current = this.Spots[0].date;
 
-		this.spots.forEach(s => {
+		this.Spots.forEach((s) => {
 			if (current == undefined) current = s.date;
 
 			if (s.date != undefined) {
@@ -166,9 +177,12 @@ export class Trick {
 
 export class TrickDescription {
 	parts: Array<string>;
-	spots: Array<{spot: Spot, date?: Date}>;
+	spots: Array<{ spot: GeneralSpot; date?: Date }>;
 
-	constructor(parts: Array<string>, spots: Array<{spot: Spot, date?: Date}>) {
+	constructor(
+		parts: Array<string>,
+		spots: Array<{ spot: GeneralSpot; date?: Date }>,
+	) {
 		this.parts = parts;
 		this.spots = spots;
 	}
