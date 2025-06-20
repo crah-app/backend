@@ -12,6 +12,7 @@ import {
 } from '../types/tricklogic.js';
 import { ChecksumAlgorithm } from '@aws-sdk/client-s3';
 import { GeneralSpot } from '../trickLogic/spot.js';
+import { setUserRank } from './ranks.js';
 
 /* Get all tricks from db */
 export async function getAllTricks(
@@ -46,6 +47,12 @@ export async function getAllTricks(
 	}
 }
 
+// updated query
+const getAllUserTricksQuery = `
+select generalspots.TrickId, tricks.UserId, tricks.Name, generalspots.Points, generalspots.Difficulty , generalspots.Spot, generalspots.Date from tricks 
+LEFT JOIN generalspots 
+ON tricks.Id = generalspots.TrickId where userId = "user_2yBTXFqJg3AopGqlFQAApA07mVE";`;
+
 /* 
 	Get all tricks from user
 
@@ -65,7 +72,7 @@ export async function getTricks(
 			return new Err(ErrType.RequestMissingProperty, 'User ID is required');
 
 		const query = `
-			SELECT Tricks.Id, Tricks.Name, Tricks.Points, Tricks.Date, Spots.Type
+			SELECT Tricks.Id, Tricks.Name, Tricks.Date, Spots.Type
 			FROM Tricks
 			INNER JOIN Spots ON Tricks.Id = Spots.TrickId
 			WHERE Tricks.UserId = ?
@@ -112,6 +119,7 @@ export async function postTrick(
 	);
 }
 
+// do not even think of using this function
 async function handlePostTrick(
 	req: Request,
 	res: Response,
@@ -218,24 +226,40 @@ export async function addTrickToAllTricks(
 	allTricksData: AllTricksData,
 ): Promise<Err | void> {
 	try {
-		await conn.beginTransaction();
+		console.log(allTricksData.Types);
+		// await conn.beginTransaction();
 
 		const queryAllTricks = `
-			INSERT INTO AllTricks(Name, DefaultPoints) VALUES (?, ?)
+			INSERT INTO AllTricks(\`Name\`, DefaultPoints, Costum, Difficulty, SecondName) VALUES (?, ?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE
+			DefaultPoints = VALUES(DefaultPoints),
+			Costum = VALUES(Costum),
+			Difficulty = VALUES(Difficulty),
+			SecondName = VALUES(SecondName)
 		`;
-		await conn.query(queryAllTricks, [trickName, allTricksData.DefaultPoints]);
+
+		await conn.query(queryAllTricks, [
+			trickName,
+			allTricksData.DefaultPoints,
+			allTricksData.Costum,
+			allTricksData.Difficulty,
+			null, // parse null as secondName
+		]);
 
 		const queryTrickTypes = `
-			INSERT INTO TrickTypes(AllTricksName, Type) VALUES (?, ?)
+			INSERT INTO TrickTypes(AllTricksName, \`Type\`) VALUES (?, ?)
 		`;
+
+		console.log('sind das valid types?', allTricksData.Types);
 
 		for (const tType of allTricksData.Types) {
 			const trickType = tType + 1; // js enums start at 0, mysql enums at 1
 			await conn.query(queryTrickTypes, [trickName, trickType]);
 		}
 
-		await conn.commit();
+		// await conn.commit();
 	} catch (err) {
+		console.warn(err);
 		await conn.rollback();
 		return err as Err;
 	}
@@ -261,6 +285,7 @@ export async function deleteTrick(
 	});
 }
 
+// do not use
 export async function HandleDeleteTrick(
 	res: Response,
 	db: DbConnection,
@@ -307,6 +332,8 @@ export async function HandleDeleteTrick(
 
 /*
 	returns boolean wether user landed the trick
+
+	do not use
 */
 export async function userOwnsTrick(
 	db: DbConnection,
@@ -372,6 +399,9 @@ export async function setCurrentUserTricks(
 
 	try {
 		const { sessionToken } = await verifySessionToken(req, res);
+
+		if (!sessionToken) return;
+
 		const userId = sessionToken.sub;
 
 		if (userId !== url_userId) {
@@ -390,8 +420,10 @@ export async function setCurrentUserTricks(
 		// this is the rank value of the user
 		const avg = points / tricks.length;
 
+		const result = await setUserRank(userId, avg, db);
+
 		res.status(200);
-		res.json({ user_points: avg.toFixed(0) });
+		res.json({ user_points: avg.toFixed(0), rank: result });
 	} catch (err) {
 		res.status(404);
 		res.json({ error: err });
@@ -455,42 +487,66 @@ export async function getPointsOfTrick(
 
 		let created_trick: Trick = new Trick(description, allTricksData);
 
-		console.log('created_trick:', created_trick);
+		console.log(
+			'created_trick:',
+			created_trick,
+			created_trick.getDefaultDifficulty(),
+		);
 
 		// Falls Trick nicht existiert, hinzufügen
 		if (!allTricksData) {
+			console.log(allTricksData, 'funktioniert das?', created_trick.Name, {
+				Name: created_trick.Name,
+				DefaultPoints: created_trick.DefaultPoints,
+				Costum: created_trick.Costum,
+				Difficulty: created_trick.getDefaultDifficulty(),
+				Types: created_trick.Types || [TrickType.Overhead],
+			});
+
 			await addTrickToAllTricks(conn, created_trick.Name, {
 				Name: created_trick.Name,
 				DefaultPoints: created_trick.DefaultPoints,
 				Costum: created_trick.Costum,
-				Difficulty: created_trick.Difficulty,
-				Types: created_trick.Types || [TrickType.Overhead],
+				Difficulty: created_trick.getDefaultDifficulty(),
+				Types: created_trick.Types,
 			});
 		}
 
 		// Trick einfügen
 		const insertTrickQuery = `
-			INSERT INTO Tricks(UserId, Name, Points)
-			VALUES (?, ?, ?)
+		INSERT INTO Tricks(UserId, Name)
+		VALUES (?, ?)
+		ON DUPLICATE KEY UPDATE 
+		  Id = LAST_INSERT_ID(Id);
 		`;
 
-		const [result] = await conn.query(insertTrickQuery, [
+		const [insertResult] = await conn.query(insertTrickQuery, [
 			userId,
 			created_trick.getName(),
-			created_trick.getPoints(),
 		]);
-		const trickId = (result as any).insertId;
+
+		const trickId = (insertResult as any).insertId;
 
 		console.log('trick id:', trickId);
 
 		// insert spots
-		const insertSpotQuery = `INSERT INTO GeneralSpots(TrickId, Spot, Date) VALUES (?, ?, ?)`;
+		const insertSpotQuery = `
+			INSERT INTO GeneralSpots(TrickId, Spot, Date, Points, Difficulty)
+			VALUES (?, ?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE Date = VALUES(Date)
+			`;
 
 		for (const spotObj of created_trick.Spots) {
 			// "Park" | "Street" | "Flat"
 			const spot = spotObj.spot;
 			// insert row for every spot the user landed the trick
-			await conn.query(insertSpotQuery, [trickId, spot, spotObj.date]);
+			await conn.query(insertSpotQuery, [
+				trickId,
+				spot,
+				spotObj.date,
+				created_trick.getPoints(),
+				created_trick.Difficulty,
+			]);
 		}
 
 		await conn.commit();

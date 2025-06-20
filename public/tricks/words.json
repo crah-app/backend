@@ -71,6 +71,7 @@
   { "word":"720", "points":750, "percentageAfter":5.5},
   { "word":"900", "points":1400, "percentageAfter":7.0},
   { "word":"1080", "points":1800, "percentageAfter":8.5},
+  { "word":"1440", "points":2300, "percentageAfter":12},
   { "word":"frontside"},
   { "word":"downside"},
   { "word":"switch", "percentageAfter": 2.0},

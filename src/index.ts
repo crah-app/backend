@@ -18,6 +18,7 @@ import { dbConnection } from './constants/dbConnection.js';
 import redis from 'redis';
 import { Err } from './constants/errors.js';
 import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
+import ranks from './routes/ranks.js';
 
 const redisClient = redis.createClient();
 
@@ -63,6 +64,7 @@ router.use('/tricks', tricks);
 router.use('/users', users);
 router.use('/chats', chats);
 router.use('/source', source);
+router.use('/ranks', ranks);
 
 // 5. Handle Socket.IO events
 let typingUsers: isTypingInterface = {}; // Store typing status in memory

@@ -34,10 +34,10 @@ export class Trick {
 		this.Name = description.parts.join(' ');
 		this.Spots = description.spots;
 
-		// boiler plate
+		// default
 		this.Costum = false;
-		this.Difficulty = TrickDifficulty.Beginner;
 
+		// if trick already exists
 		if (allTricksData !== undefined) {
 			this.DefaultPoints = allTricksData.DefaultPoints;
 			this.Points =
@@ -85,6 +85,8 @@ export class Trick {
 		this.Points =
 			this.DefaultPoints +
 			this.DefaultPoints * GeneralSpot.getMaximumPercentage(this.Spots);
+
+		this.Difficulty = TrickDifficulty.getDifficultyByPoints(this.Points);
 	}
 
 	private assertBlockFound(
@@ -140,6 +142,10 @@ export class Trick {
 
 	getName(): string {
 		return this.Name;
+	}
+
+	getDefaultDifficulty(): TrickDifficulty {
+		return TrickDifficulty.getDifficultyByPoints(this.DefaultPoints);
 	}
 
 	getOldestDate(): Date | undefined {

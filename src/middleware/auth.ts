@@ -45,13 +45,13 @@ export async function verifySessionToken(
 				}
 
 				const currentTime = Math.floor(Date.now() / 1000);
-				if (decoded.exp < currentTime || decoded.nbf > currentTime) {
+				if (decoded?.exp < currentTime || decoded?.nbf > currentTime) {
 					res.status(401).json({ error: 'Token is expired or not yet valid' });
 					resolve({ sessionToken: null });
 				}
 
 				const permittedOrigins = ['http://localhost:4000'];
-				if (decoded.azp && !permittedOrigins.includes(decoded.azp)) {
+				if (decoded?.azp && !permittedOrigins.includes(decoded?.azp)) {
 					res.status(403).json({ error: "Invalid 'azp' claim" });
 					resolve({ sessionToken: null });
 				}

@@ -250,7 +250,7 @@ CREATE TABLE ContributionCommentDislikes (
 
 -- ALL TRICKS
 CREATE TABLE AllTricks (
-    Name VARCHAR(100) NOT NULL PRIMARY KEY,
+    `Name` VARCHAR(100) NOT NULL PRIMARY KEY,
     DefaultPoints INT NOT NULL, -- points without the percentage increase of the spot
     Costum BOOLEAN DEFAULT FALSE,
     Difficulty ENUM(
@@ -271,7 +271,7 @@ CREATE TABLE AllTricks (
 CREATE TABLE TrickTypes (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     AllTricksName VARCHAR(100) NOT NULL,
-    Type ENUM('Balance', 'Rewind', 'Overhead', 'Grab'),
+    `Type` ENUM('Balance', 'Rewind', 'Overhead', 'Grab'),
     CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
@@ -607,7 +607,6 @@ CREATE TABLE Tricks (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     UserId VARCHAR(255) NOT NULL,
     Name VARCHAR(100) NOT NULL,
-    Points INT NOT NULL,
     CONSTRAINT fk_trick__all_trick FOREIGN KEY (Name) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
@@ -615,6 +614,19 @@ CREATE TABLE Tricks (
 CREATE TABLE GeneralSpots (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     TrickId INT NOT NULL,
+    Points INT NOT NULL,
+    Difficulty ENUM(
+    'Beginner',
+    'Normal',
+    'Intermediate',
+    'Advanced',
+    'Hard',
+    'Very Hard',
+    'Expert',
+    'Impossible',
+    'Goated',
+    'Legendary'
+) NOT NULL,
     Spot ENUM('Park', 'Street', 'Flat') NOT NULL,
     Date DATE,
     CONSTRAINT fk_general_spot__trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT
@@ -625,10 +637,32 @@ CREATE TABLE Spots (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     TrickId INT NOT NULL,
     GeneralSpot ENUM('Park', 'Street', 'Flat') NOT NULL,
+    Difficulty ENUM(
+    'Beginner',
+    'Normal',
+    'Intermediate',
+    'Advanced',
+    'Hard',
+    'Very Hard',
+    'Expert',
+    'Impossible',
+    'Goated',
+    'Legendary'
+) NOT NULL,
     Spot ENUM('Flat', 'OffLedge', 'DropIn', 'Flyout', 'Air') NOT NULL,
+    Points INT NOT NULL,
     Date DATE,
     CONSTRAINT fk_spot__trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
+
+ALTER TABLE Tricks
+ADD CONSTRAINT unique_user_trick
+UNIQUE (UserId, Name);
+
+ALTER TABLE GeneralSpots
+ADD CONSTRAINT unique_user_trick_spot
+UNIQUE (TrickId, Spot);
+
 
 -- CHATS
 CREATE TABLE Chats (
@@ -762,15 +796,6 @@ CREATE TABLE Sources (
 -- (1, 'user_2', 'Writer'),
 -- (2, 'user_3', 'Graphic Designer'),
 -- (3, 'user_2w8KalaMAlwDDEa7tTV3pV8Dte1', 'Camera Man');
-
--- INSERT INTO Tricks (UserId, Name, Points) VALUES
--- ('user_1', 'Kickless bar', 390),
--- ('user_2', 'Bri flip', 180);
-
--- INSERT INTO Spots (TrickId, Spot, Date) VALUES
--- (1, 'Flat', '2025-03-15'),
--- (1, 'OffLedge', '2023-02-11'),
--- (2, 'DropIn', '2021-08-18');
 
 -- INSERT INTO Chats (Id, IsGroup, Name, CreatedAt, UpdatedAt)
 -- VALUES 
