@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import DbConnection from './../constants/dbConnection.js';
 import { verifyJwt, verifySessionToken } from './auth.js';
 import { Trick, TrickDescription } from '../trickLogic/trick.js';
-import { PoolConnection } from 'mysql2/promise';
+import { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import {
 	AllTricksData,
 	FullTrick,
@@ -413,12 +413,24 @@ export async function setCurrentUserTricks(
 			return new Err(ErrType.RequestMissingProperty, 'Tricks is required');
 		}
 
-		console.log('tricks', tricks);
-
 		const points = await getPointsOfTrickArray(tricks, db, userId);
 
-		// this is the rank value of the user
-		const avg = points / tricks.length;
+		const bestTricks = await handleGetOverallBestTricksOfUser(db, userId);
+
+		if (bestTricks.err || !bestTricks.rows) {
+			throw Error(
+				`Operation Failed: Couldn't get overall best tricks of current-user: ${bestTricks.err}`,
+			);
+		}
+
+		// @ts-ignore
+		const pointsOfBestTricks = bestTricks.rows.reduce((acc, curr) => {
+			return acc + curr.Points;
+		}, 0);
+
+		// this is the rank point-value of the user
+		// @ts-ignore
+		const avg = pointsOfBestTricks / bestTricks.rows.length;
 
 		const result = await setUserRank(userId, avg, db);
 
@@ -512,7 +524,7 @@ export async function getPointsOfTrick(
 			});
 		}
 
-		// Trick einfügen
+		// insert trick
 		const insertTrickQuery = `
 		INSERT INTO Tricks(UserId, Name)
 		VALUES (?, ?)
@@ -555,6 +567,194 @@ export async function getPointsOfTrick(
 		await conn.rollback();
 		console.warn('Error setting up trick: ', err);
 		return 0;
+	} finally {
+		conn.release();
+	}
+}
+
+// get five best tricks of user
+export async function getBestTricksOfUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const userId = req.params.userId;
+
+	const result = await handleGetBestTricksOfUser(db, userId);
+
+	if (result.err) {
+		res.json({ error: result.error });
+		return;
+	}
+
+	res.json(result);
+}
+
+/* 
+	returns top 5 best tricks of user in each general spot (Park, Street, Flat) including points and point-average
+*/
+export async function handleGetBestTricksOfUser(
+	db: DbConnection,
+	userId: string,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) return { err: true };
+
+	const query = `
+		SELECT 
+		sub.TrickId,
+		sub.UserId,
+		sub.Name,
+		sub.Points,
+		sub.Difficulty,
+		sub.Spot,
+		sub.Date
+		FROM (
+		SELECT
+			g.TrickId,
+			t.UserId,
+			t.Name,
+			g.Points,
+			g.Difficulty,
+			g.Spot,
+			g.Date,
+			ROW_NUMBER() OVER (PARTITION BY g.Spot ORDER BY g.Points DESC) AS rn
+		FROM tricks t
+		INNER JOIN generalspots g ON t.Id = g.TrickId
+		WHERE t.UserId = ?
+		) AS sub
+		WHERE sub.rn <= 5;
+	`;
+
+	type Trick = RowDataPacket & {
+		TrickId: number;
+		UserId: string;
+		Name: string;
+		Points: number;
+		Difficulty: string;
+		Spot: string;
+		Date: string;
+	};
+
+	try {
+		const [rows] = await conn.query<Trick[]>(query, [userId]);
+
+		const grouped: Record<string, Trick[]> = {};
+
+		for (const row of rows) {
+			if (!grouped[row.Spot]) {
+				grouped[row.Spot] = [];
+			}
+			grouped[row.Spot].push(row);
+		}
+
+		return { err: false, error: null, rows: grouped ?? [] };
+	} catch (error) {
+		return { err: true, error };
+	} finally {
+		conn.release();
+	}
+}
+
+// get overall best tricks of user
+export async function getOverallBestTricksOfUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const userId = req.params.userId;
+
+	const result = await handleGetOverallBestTricksOfUser(db, userId);
+
+	if (result.err) {
+		res.json({ error: result.error });
+		return;
+	}
+
+	res.json(result.rows);
+}
+
+// returns overall best tricks of user
+export async function handleGetOverallBestTricksOfUser(
+	db: DbConnection,
+	userId: string,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) return { err: true };
+
+	const query = `
+		SELECT 
+			generalspots.TrickId,
+			tricks.UserId,
+			tricks.Name,
+			generalspots.Points,
+			generalspots.Difficulty,
+			generalspots.Spot,
+			generalspots.Date
+		FROM tricks
+		INNER JOIN generalspots ON tricks.Id = generalspots.TrickId
+		WHERE tricks.UserId = ?
+		ORDER BY generalspots.Points DESC
+		LIMIT 5;
+	`;
+
+	try {
+		const [rows] = await conn.query(query, [userId]);
+
+		return { err: false, error: null, rows: rows ?? [] };
+	} catch (err) {
+		return { err: true, error: err };
+	} finally {
+		conn.release();
+	}
+}
+
+// get all tricks of user
+export async function getAllTricksOfUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const userId = req.params.userId;
+
+	const result = await handleGetAllTricksOfUser(db, userId);
+
+	if (result.err) {
+		res.json({ error: result.error });
+		return;
+	}
+
+	res.json(result.rows);
+}
+
+// returns all tricks in a json
+export async function handleGetAllTricksOfUser(
+	db: DbConnection,
+	userId: string,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) return { err: true };
+
+	const query = `
+		SELECT 
+			generalspots.TrickId,
+			tricks.UserId,
+			tricks.Name,
+			generalspots.Points,
+			generalspots.Difficulty,
+			generalspots.Spot,
+			generalspots.Date
+		FROM tricks
+		INNER JOIN generalspots ON tricks.Id = generalspots.TrickId
+		WHERE tricks.UserId = ?;
+	`;
+
+	try {
+		const [rows] = await conn.query(query, [userId]);
+
+		return { err: false, error: null, rows: rows ?? [] };
+	} catch (error) {
+		return { err: true, error };
 	} finally {
 		conn.release();
 	}

@@ -3,6 +3,7 @@ import { createClerkClient } from '@clerk/backend';
 import { Err, ErrType } from '../constants/errors.js';
 import DbConnection from './../constants/dbConnection.js';
 import { Pool } from 'mysql2';
+import { verifySessionToken } from './auth.js';
 
 // export to /types
 type UserSetting = 'setting01' | 'setting02';
@@ -115,5 +116,41 @@ export async function isUsernameDuplicate(
 		conn.release();
 	} catch (err) {
 		res.json({ err: err });
+	}
+}
+
+// set rider type of user
+export async function setRiderTypeOfUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const url_userId = req.params.userId;
+	const riderType = req.body.riderType;
+
+	const { sessionToken } = await verifySessionToken(req, res);
+
+	if (!sessionToken) return;
+
+	const userId = sessionToken.sub;
+
+	if (userId !== url_userId) {
+		return res.status(401).json({ error: 'Not Authenticated' });
+	}
+
+	const conn = await db.connect();
+	if (conn instanceof Err) return conn;
+
+	const query = `
+		UPDATE users SET riderType = ? where Id = ?;
+	`;
+
+	try {
+		conn.query(query, [riderType, userId]);
+		res.status(202).json({ success: true });
+	} catch (err) {
+		res.status(404);
+		res.json({ success: false, error: err });
+		return err as Err;
 	}
 }

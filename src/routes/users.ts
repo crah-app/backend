@@ -6,6 +6,7 @@ import {
 	getAllUsers,
 	getUserStats,
 	isUsernameDuplicate,
+	setRiderTypeOfUser,
 } from '../middleware/users.js';
 
 const router = express.Router({ mergeParams: true });
@@ -13,6 +14,8 @@ const router = express.Router({ mergeParams: true });
 router.use(express.json());
 
 /* 
+get all user data
+
 e.g
 
 curl http://localhost:4000/api/users/all
@@ -23,6 +26,8 @@ router.get('/all', async (req: Request, res: Response) => {
 });
 
 /* 
+get data of current-user
+
 e.g
 
 curl http://localhost:4000/api/users/1
@@ -33,6 +38,9 @@ router.get('/:userId', async (req: Request, res: Response) => {
 });
 
 /* 
+
+check wether username is duplicate
+
 e.g
 
 curl http://localhost:4000/api/users/username/nameIsDuplicate
@@ -44,5 +52,15 @@ router.get(
 		errorHandler(await isUsernameDuplicate(req, res, dbConnection), res);
 	},
 );
+
+/* 
+post rider type of current-user
+
+use bearer
+*/
+
+router.post('/:userId/setRiderType', async (req: Request, res: Response) => {
+	errorHandler(await setRiderTypeOfUser(req, res, dbConnection), res);
+});
 
 export default router;

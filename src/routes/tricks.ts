@@ -6,6 +6,9 @@ import {
 	getTrick,
 	getAllTricks,
 	setCurrentUserTricks,
+	getBestTricksOfUser,
+	getAllTricksOfUser,
+	getOverallBestTricksOfUser,
 } from '../middleware/tricks.js';
 import { errorHandler, Err } from '../constants/errors.js';
 import { dbConnection } from '../constants/dbConnection.js';
@@ -21,6 +24,11 @@ export default router;
 /* Get all tricks */
 router.get('/all', async (req, res) => {
 	errorHandler(await getAllTricks(req, res, dbConnection), res);
+});
+
+/* Get all tricks of current-user */
+router.get('/:userId/all', async (req, res) => {
+	errorHandler(await getAllTricksOfUser(req, res, dbConnection), res);
 });
 
 router
@@ -60,4 +68,20 @@ current-user initiaizes/updates his (5) best tricks
 
 router.post('/:userId/setTricks', async (req, res) => {
 	errorHandler(await setCurrentUserTricks(req, res, dbConnection), res);
+});
+
+/*
+	get 5 best tricks of user in each spot Park, Street, Flat
+*/
+
+router.get('/:userId/bestFiveBySpot', async (req, res) => {
+	errorHandler(await getBestTricksOfUser(req, res, dbConnection), res);
+});
+
+/*
+	get 5 best tricks of user overall
+*/
+
+router.get('/:userId/bestFiveOverall', async (req, res) => {
+	errorHandler(await getOverallBestTricksOfUser(req, res, dbConnection), res);
 });
