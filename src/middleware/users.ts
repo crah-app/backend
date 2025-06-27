@@ -4,6 +4,10 @@ import { Err, ErrType } from '../constants/errors.js';
 import DbConnection from './../constants/dbConnection.js';
 import { Pool } from 'mysql2';
 import { verifySessionToken } from './auth.js';
+import {
+	handleGetBestTricksOfUser,
+	handleGetOverallBestTricksOfUser,
+} from './tricks.js';
 
 // export to /types
 type UserSetting = 'setting01' | 'setting02';
@@ -34,7 +38,7 @@ export async function getUserStats(
 		const conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		// sql query to get user information to display in profile
+		// sql query to get user information
 		const query = `
 			SELECT 
 			u.*, 
@@ -47,12 +51,12 @@ export async function getUserStats(
 			GROUP BY u.Id;
 		`;
 
-		// outputs a json with all users and their data
-		// const userStats = await clerkClient.users.getUser(id);
+		const bestTricks = await handleGetBestTricksOfUser(db, id);
+		const bestTricksOverall = await handleGetOverallBestTricksOfUser(db, id);
 
 		const [rows] = await conn.query(query, [id]);
 
-		res.json(rows);
+		res.json([rows, [bestTricks.rows], bestTricksOverall.rows]);
 		conn.release();
 	} catch (err) {
 		res.json({ err: err });

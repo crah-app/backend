@@ -58,12 +58,18 @@ export async function getAllPosts(
 			? getPostByPostId
 			: allPostsQuery;
 
+		const values = userId
+			? [userId, userId]
+			: postId
+			? [userId, postId]
+			: [userId];
+
 		const conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		const [rows] = await conn.execute(query, [
-			userId ? userId : postId ? postId : null,
-		]);
+		console.log(userId);
+
+		const [rows] = await conn.execute(allPostsQueryByUserId, values);
 
 		conn.release();
 
