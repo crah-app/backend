@@ -5,6 +5,7 @@ import DbConnection from './../constants/dbConnection.js';
 import { Pool } from 'mysql2';
 import { verifySessionToken } from './auth.js';
 import {
+	handleGetBestTrickOfUser,
 	handleGetBestTricksOfUser,
 	handleGetOverallBestTricksOfUser,
 } from './tricks.js';
@@ -53,13 +54,15 @@ export async function getUserStats(
 
 		const bestTricks = await handleGetBestTricksOfUser(db, id);
 		const bestTricksOverall = await handleGetOverallBestTricksOfUser(db, id);
+		const bestTrick = await handleGetBestTrickOfUser(db, id);
 
 		const [rows] = await conn.query(query, [id]);
 
-		res.json([rows, [bestTricks.rows], bestTricksOverall.rows]);
+		res.json([rows, [bestTricks.rows], bestTricksOverall.rows, bestTrick]);
 		conn.release();
 	} catch (err) {
-		res.json({ err: err });
+		console.warn('[getUserstat] Error:', err);
+		res.status(500).json({ err: 'Internal Server Error' });
 	}
 }
 

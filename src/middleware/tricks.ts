@@ -14,7 +14,7 @@ import { ChecksumAlgorithm } from '@aws-sdk/client-s3';
 import { GeneralSpot } from '../trickLogic/spot.js';
 import { setUserRank } from './ranks.js';
 
-/* Get all tricks from db */
+// Get all existing tricks
 export async function getAllTricks(
 	req: Request,
 	res: Response,
@@ -47,153 +47,11 @@ export async function getAllTricks(
 	}
 }
 
-// updated query
-const getAllUserTricksQuery = `
-select generalspots.TrickId, tricks.UserId, tricks.Name, generalspots.Points, generalspots.Difficulty , generalspots.Spot, generalspots.Date from tricks 
-LEFT JOIN generalspots 
-ON tricks.Id = generalspots.TrickId where userId = "user_2yBTXFqJg3AopGqlFQAApA07mVE";`;
-
-/* 
-	Get all tricks from user
-
-	@depricated
-
-	do not use
-*/
-export async function getTricks(
-	req: Request,
-	res: Response,
-	db: DbConnection,
-): Promise<Err | void> {
-	const userId: any | undefined = req.params.userId;
-
-	try {
-		if (!userId)
-			return new Err(ErrType.RequestMissingProperty, 'User ID is required');
-
-		const query = `
-			SELECT Tricks.Id, Tricks.Name, Tricks.Date, Spots.Type
-			FROM Tricks
-			INNER JOIN Spots ON Tricks.Id = Spots.TrickId
-			WHERE Tricks.UserId = ?
-		`;
-
-		let conn = await db.connect();
-		if (conn instanceof Err) return conn;
-
-		const [rows] = await conn.query(query, userId);
-		const trickList = [rows];
-
-		const idTricks: Map<number, Partial<Trick>> = new Map();
-
-		trickList.forEach((row: any) => {
-			let trick: any | undefined = idTricks.get(row.Id);
-
-			if (trick!) trick.spots?.push([row.Type, row.Date]);
-			else
-				idTricks.set(row.Id, {
-					Name: row.Name,
-					Spots: [row.Type, row.Date],
-					Points: row.Points,
-				});
-		});
-
-		conn.release();
-		res.json([...Array.from(idTricks)]);
-	} catch (err) {
-		return err as Err;
-	}
-}
-
-/*
-	User tries to create new trick
-*/
-export async function postTrick(
-	req: Request,
-	res: Response,
-	db: DbConnection,
-	secret: string,
-): Promise<Err | void> {
-	return await verifyJwt(req, res, secret, (userId: string) =>
-		handlePostTrick(req, res, db, userId),
-	);
-}
-
-// do not even think of using this function
-async function handlePostTrick(
-	req: Request,
-	res: Response,
-	db: DbConnection,
-	userId: string,
-): Promise<void | Err> {
-	const parts: Array<string> = req.body.parts;
-	const spots: Array<{ spot: GeneralSpot; date?: Date }> = req.body.spots;
-
-	const name = parts.join(' ');
-	const conn = await db.connect();
-	if (conn instanceof Err) return conn;
-
-	try {
-		await conn.beginTransaction();
-
-		// Default-Punkte aus AllTricks holen
-		let allTricksData: Err | AllTricksData | undefined = await getTrickData(
-			conn,
-			name,
-		);
-		if (allTricksData instanceof Err) throw allTricksData;
-
-		const description = new TrickDescription(parts, spots);
-		let trick: Trick = new Trick(description, allTricksData);
-
-		// Falls Trick nicht existiert, hinzufügen
-		if (!allTricksData) {
-			await addTrickToAllTricks(conn, trick.Name, {
-				Name: trick.Name,
-				DefaultPoints: trick.DefaultPoints,
-				Costum: trick.Costum,
-				Difficulty: trick.Difficulty,
-				Types: trick.Types,
-			});
-		}
-
-		// Trick einfügen
-		const insertTrickQuery = `
-			INSERT INTO Tricks(UserId, Name, Points)
-			VALUES (?, ?, ?)
-		`;
-
-		const [result] = await conn.query(insertTrickQuery, [
-			userId,
-			trick.getName(),
-			trick.getPoints(),
-		]);
-		const trickId = (result as any).insertId;
-
-		// Spots einfügen
-		const insertSpotQuery = `INSERT INTO GeneralSpots(TrickId, Spot, Date) VALUES (?, ?, ?)`;
-
-		for (const spotObj of trick.Spots) {
-			// JS Enums starten bei 0, SQL Enum ab 1
-			const spot = spotObj.spot + 1;
-			await conn.query(insertSpotQuery, [trickId, spot, spotObj.date]);
-		}
-
-		await conn.commit();
-		res.status(200).send('Trick added to the trick list');
-	} catch (err) {
-		await conn.rollback();
-		return err as Err;
-	} finally {
-		conn.release();
-	}
-}
-
+// Get one trick
 export async function getTrickData(
 	conn: PoolConnection,
 	trickName: string,
 ): Promise<Err | AllTricksData | undefined> {
-	return undefined;
 	try {
 		const query = `
 			SELECT AllTricks.Name, AllTricks.DefaultPoints,AllTricks.Costum, AllTricks.Difficulty, AllTricks.SecondName, TrickTypes.Type
@@ -217,18 +75,13 @@ export async function getTrickData(
 	}
 }
 
-/* 
-	Add costum trick to the "AllTricks" table
-*/
+// Add one trick
 export async function addTrickToAllTricks(
 	conn: PoolConnection,
 	trickName: string,
 	allTricksData: AllTricksData,
 ): Promise<Err | void> {
 	try {
-		console.log(allTricksData.Types);
-		// await conn.beginTransaction();
-
 		const queryAllTricks = `
 			INSERT INTO AllTricks(\`Name\`, DefaultPoints, Costum, Difficulty, SecondName) VALUES (?, ?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE
@@ -250,114 +103,17 @@ export async function addTrickToAllTricks(
 			INSERT INTO TrickTypes(AllTricksName, \`Type\`) VALUES (?, ?)
 		`;
 
-		console.log('sind das valid types?', allTricksData.Types);
-
 		for (const tType of allTricksData.Types) {
 			const trickType = tType + 1; // js enums start at 0, mysql enums at 1
 			await conn.query(queryTrickTypes, [trickName, trickType]);
 		}
 
-		// await conn.commit();
+		if (allTricksData.Types.length <= 0) {
+			await conn.query(queryTrickTypes, [trickName, 'None']);
+		}
 	} catch (err) {
 		console.warn(err);
 		await conn.rollback();
-		return err as Err;
-	}
-}
-
-/*
-	Try to delete a trick
-*/
-export async function deleteTrick(
-	req: Request,
-	res: Response,
-	db: DbConnection,
-	secret: string,
-): Promise<Err | void> {
-	return await verifyJwt(req, res, secret, async (userId: string) => {
-		const trickId = req.params.trickId;
-		if (!trickId)
-			return new Err(
-				ErrType.RequestMissingProperty,
-				'The request is missing the trickId',
-			);
-		return await HandleDeleteTrick(res, db, userId, trickId!);
-	});
-}
-
-// do not use
-export async function HandleDeleteTrick(
-	res: Response,
-	db: DbConnection,
-	userId: string,
-	trickId: string,
-): Promise<Err | void> {
-	const deleteTrickQuery = `
-		DELETE FROM Tricks
-		WHERE Tricks.Id = ? AND Tricks.UserId = ?
-	`;
-
-	const deleteSpotsQuery = `
-		DELETE FROM GeneralSpots
-		WHERE GeneralSpots.TrickId = ?
-	`;
-
-	let conn = await db.connect();
-	if (conn instanceof Err) return conn;
-
-	try {
-		await conn.beginTransaction();
-
-		// Trick löschen
-		const [trickResult] = await conn.query(deleteTrickQuery, [trickId, userId]);
-
-		// Optional: prüfen, ob Trick überhaupt gelöscht wurde
-		// const affectedRows = (trickResult as any).affectedRows;
-		// if (affectedRows === 0) {
-		//   throw new Err(ErrType.NotFound, 'Trick not found or not owned by user');
-		// }
-
-		// Spots löschen
-		await conn.query(deleteSpotsQuery, [trickId]);
-
-		await conn.commit();
-		res.status(200).send('Trick deleted from the trick list');
-	} catch (err) {
-		await conn.rollback();
-		return err as Err;
-	} finally {
-		conn.release();
-	}
-}
-
-/*
-	returns boolean wether user landed the trick
-
-	do not use
-*/
-export async function userOwnsTrick(
-	db: DbConnection,
-	userId: string,
-	trickId: string,
-): Promise<Err | boolean> {
-	const query = `
-		SELECT * FROM Tricks
-		WHERE Tricks.Id = ?
-		AND Tricks.UserId = ?
-	`;
-
-	try {
-		const conn = await db.connect();
-		if (conn instanceof Err) return conn;
-
-		try {
-			const [results] = await conn.query(query, [trickId, userId]);
-			// Prüfen, ob mindestens ein Eintrag gefunden wurde
-			return (results as any[]).length > 0;
-		} finally {
-			conn.release();
-		}
-	} catch (err) {
 		return err as Err;
 	}
 }
@@ -413,7 +169,7 @@ export async function setCurrentUserTricks(
 			return new Err(ErrType.RequestMissingProperty, 'Tricks is required');
 		}
 
-		const points = await getPointsOfTrickArray(tricks, db, userId);
+		await getPointsOfTrickArray(tricks, db, userId);
 
 		const bestTricks = await handleGetOverallBestTricksOfUser(db, userId);
 
@@ -487,34 +243,17 @@ export async function getPointsOfTrick(
 			trickName,
 		);
 
-		console.log('all tricks data:', allTricksData);
-
 		if (allTricksData instanceof Err) throw allTricksData;
 
 		const description = new TrickDescription(trickNameParts, [
 			{ spot: trickSpot },
 		]);
-
-		console.log('trick description:', description);
-
 		let created_trick: Trick = new Trick(description, allTricksData);
 
-		console.log(
-			'created_trick:',
-			created_trick,
-			created_trick.getDefaultDifficulty(),
-		);
+		console.log('created_trick:', created_trick);
 
-		// Falls Trick nicht existiert, hinzufügen
+		// add trick to allTricks table if it does not exist yet
 		if (!allTricksData) {
-			console.log(allTricksData, 'funktioniert das?', created_trick.Name, {
-				Name: created_trick.Name,
-				DefaultPoints: created_trick.DefaultPoints,
-				Costum: created_trick.Costum,
-				Difficulty: created_trick.getDefaultDifficulty(),
-				Types: created_trick.Types || [TrickType.Overhead],
-			});
-
 			await addTrickToAllTricks(conn, created_trick.Name, {
 				Name: created_trick.Name,
 				DefaultPoints: created_trick.DefaultPoints,
@@ -538,7 +277,6 @@ export async function getPointsOfTrick(
 		]);
 
 		const trickId = (insertResult as any).insertId;
-
 		console.log('trick id:', trickId);
 
 		// insert spots
@@ -755,6 +493,168 @@ export async function handleGetAllTricksOfUser(
 		return { err: false, error: null, rows: rows ?? [] };
 	} catch (error) {
 		return { err: true, error };
+	} finally {
+		conn.release();
+	}
+}
+
+// get points of one trick. If trick doesn`t exist yet create it
+// If can`t create trick throw error
+export async function getPointsOfTricks(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	try {
+		const tricks = req.body.tricks;
+
+		if (!tricks) {
+			return res.status(400).json({ message: 'No trick array' });
+		}
+
+		const result = await getPointsOfTrickArray_allTricksTableModifier(
+			tricks,
+			db,
+		);
+
+		return res.status(200).json(result);
+	} catch (error) {
+		console.warn('[getPointsOfTrick] Error:', error);
+		return res.status(500).json({ error: 'Internal Server Error' });
+	}
+}
+
+// when the current user submits his 5 best tricks, we need to calculate the "DefaultPoints" for every trick
+// based on the trick words and spot
+export async function getPointsOfTrickArray_allTricksTableModifier(
+	tricks: TrickFromDb[],
+	db: DbConnection,
+) {
+	try {
+		const createdTricks: Array<Trick | Err> = await Promise.all(
+			tricks.map((trick) => getPointsOfTrick_allTricksTableModifier(trick, db)),
+		);
+
+		if (createdTricks.some((trick) => trick instanceof Err)) {
+			throw new Error('At least one trick failed.');
+		}
+
+		const validTricks = createdTricks.filter(
+			(t): t is Trick => !(t instanceof Err),
+		);
+		const totalPoints = validTricks.reduce(
+			(sum, trick) => sum + trick.Points,
+			0,
+		);
+		const pointAvg = tricks.length > 0 ? totalPoints / tricks.length : 0;
+
+		return {
+			tricks: createdTricks,
+			totalPoints,
+			pointAvg,
+		};
+	} catch (err) {
+		console.error('Error setting up trick array:', err);
+		throw err;
+	}
+}
+
+export async function getPointsOfTrick_allTricksTableModifier(
+	trick: TrickFromDb,
+	db: DbConnection,
+): Promise<Trick | Err> {
+	const conn = await db.connect();
+	if (conn instanceof Err) return conn as Err;
+
+	try {
+		await conn.beginTransaction();
+
+		const trickName = trick.Name;
+		const trickNameParts = trickName.split(' ');
+		const trickSpot = trick.Spot;
+
+		// get default-points from the allTricks table
+		let allTricksData: Err | AllTricksData | undefined = await getTrickData(
+			conn,
+			trickName,
+		);
+
+		if (allTricksData instanceof Err) throw allTricksData;
+
+		const description = new TrickDescription(trickNameParts, [
+			{ spot: trickSpot },
+		]);
+
+		let created_trick: Trick = new Trick(description, allTricksData);
+
+		console.log('created_trick:', created_trick);
+
+		// Add trick to allTricks table f trick does not exist yet
+		if (!allTricksData) {
+			await addTrickToAllTricks(conn, created_trick.Name, {
+				Name: created_trick.Name,
+				DefaultPoints: created_trick.DefaultPoints,
+				Costum: created_trick.Costum,
+				Difficulty: created_trick.getDefaultDifficulty(),
+				Types: created_trick.Types,
+			});
+		}
+
+		await conn.commit();
+		return created_trick;
+	} catch (err) {
+		await conn.rollback();
+		console.warn('Error setting up trick: ', err);
+		return err as Err;
+	} finally {
+		conn.release();
+	}
+}
+
+export async function getBestTrickOfUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const userId = req.params.userId;
+
+	try {
+		const result = await handleGetBestTrickOfUser(db, userId);
+
+		return res.status(200).json(result);
+	} catch (error) {
+		console.warn('[getBestTrickOfUser] Error:', error);
+		return res.status(500).json({ error: 'Internal Server Error' });
+	}
+}
+
+// get single best trick of user
+export async function handleGetBestTrickOfUser(
+	db: DbConnection,
+	userId: string,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const query = `
+		SELECT 
+			generalspots.TrickId,
+			tricks.UserId,
+			tricks.Name,
+			generalspots.Points,
+			generalspots.Difficulty,
+			generalspots.Spot,
+			generalspots.Date
+		FROM tricks
+		INNER JOIN generalspots ON tricks.Id = generalspots.TrickId
+		WHERE tricks.UserId = ?
+		ORDER BY generalspots.Points DESC
+		LIMIT 1;
+		`;
+
+		const [rows] = await conn.query(query, [userId]);
+		return rows;
 	} finally {
 		conn.release();
 	}

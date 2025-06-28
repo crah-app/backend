@@ -5,6 +5,10 @@ export enum TrickType {
 	Rewind, // 1
 	Overhead, // 2
 	Grab, // 3
+	Whip, // 4
+	Rotation, // 5
+	BodyFlip, // 6
+	None, // 7
 }
 
 export enum TrickDifficulty {

@@ -52,7 +52,7 @@ CREATE TABLE Follows (
 
 -- POSTS
 CREATE TABLE Posts (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     UserId VARCHAR(255) NOT NULL,
     Type ENUM('Article', 'Video', 'Image', 'Text', 'Music') NOT NULL,
     Title VARCHAR(100),
@@ -65,6 +65,32 @@ CREATE TABLE Posts (
     CONSTRAINT fk_post__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT chk_content_article CHECK (Type = 'Article' OR Content IS NULL)
 );
+
+CREATE TABLE InboxNotifications (
+  Id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  UserId VARCHAR(255) NOT NULL,         
+  SenderId VARCHAR(255),               
+  Type ENUM(
+    'friend_request',
+    'new_follower',
+    'post_like',
+    'system_update',
+    'rank_up'
+  ) NOT NULL,
+  PostId BIGINT UNSIGNED,                  
+  Message TEXT,                    
+  IsRead BOOLEAN DEFAULT FALSE,            
+  CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE,
+  FOREIGN KEY (SenderId) REFERENCES Users(Id) ON DELETE SET NULL,
+  FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE,
+
+  INDEX (UserId),
+  INDEX (IsRead),
+  INDEX (CreatedAt)
+);
+
 
 -- POSTS REPORTS
 CREATE TABLE PostReports (
@@ -271,7 +297,7 @@ CREATE TABLE AllTricks (
 CREATE TABLE TrickTypes (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     AllTricksName VARCHAR(100) NOT NULL,
-    `Type` ENUM('Balance', 'Rewind', 'Overhead', 'Grab'),
+    `Type` ENUM('Balance', 'Rewind', 'Overhead', 'Grab', "Whip", "Rotation", "BodyFlip", "None"),
     CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
