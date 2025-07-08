@@ -12,6 +12,7 @@ export enum TrickType {
 }
 
 export enum TrickDifficulty {
+	Unknown = 'Unknown',
 	Beginner = 'Beginner',
 	Normal = 'Normal',
 	Intermediate = 'Intermediate',
@@ -23,6 +24,20 @@ export enum TrickDifficulty {
 	Goated = 'Goated',
 	Legendary = 'Legendary',
 }
+
+export const TrickDifficultyOrder = {
+	Unknown: 0,
+	Beginner: 1,
+	Normal: 2,
+	Intermediate: 3,
+	Advanced: 4,
+	Hard: 5,
+	'Very Hard': 6,
+	Expert: 7,
+	Impossible: 8,
+	Goated: 9,
+	Legendary: 10,
+} as const;
 
 export namespace TrickDifficulty {
 	export function getDifficultyByPoints(points: number): TrickDifficulty {
@@ -64,4 +79,15 @@ export interface TrickFromDb {
 	SecondName: string;
 	Spot: GeneralSpot;
 	Types: TrickType;
+}
+
+export interface TrickFromFrontend extends TrickFromDb {
+	Name: string;
+	DefaultPoints: number;
+	Costum: boolean;
+	Difficulty: TrickDifficulty;
+	SecondName: string;
+	Spot: GeneralSpot;
+	Type: string | TrickType;
+	Date: Date | null;
 }

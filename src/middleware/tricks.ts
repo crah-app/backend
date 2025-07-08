@@ -7,7 +7,10 @@ import { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import {
 	AllTricksData,
 	FullTrick,
+	TrickDifficulty,
+	TrickDifficultyOrder,
 	TrickFromDb,
+	TrickFromFrontend,
 	TrickType,
 } from '../types/tricklogic.js';
 import { ChecksumAlgorithm } from '@aws-sdk/client-s3';
@@ -144,14 +147,14 @@ export async function getTrick(
 	}
 }
 
-// current-user initiaizes/updates his (5) best tricks
+// current-user initiaizes/updates his best tricks
 export async function setCurrentUserTricks(
 	req: Request,
 	res: Response,
 	db: DbConnection,
 ) {
-	const url_userId = req.params.userId;
-	const tricks = req.body.tricks;
+	const url_userId: string = req.params.userId;
+	const tricks: TrickFromFrontend[] = req.body.tricks;
 
 	try {
 		const { sessionToken } = await verifySessionToken(req, res);
@@ -169,7 +172,19 @@ export async function setCurrentUserTricks(
 			return new Err(ErrType.RequestMissingProperty, 'Tricks is required');
 		}
 
-		await getPointsOfTrickArray(tricks, db, userId);
+		const [
+			trickTotalPoints,
+			bestTrickDifficulty,
+			bestTrickName,
+			unrecognizedWord,
+		] = await getPointsOfTrickArray(tricks as TrickFromDb[], db, userId);
+
+		// current-user typed in a trick word that does not exist in the word json list
+		if (unrecognizedWord) {
+			return res.status(404).send({
+				unrecognized_word: unrecognizedWord,
+			});
+		}
 
 		const bestTricks = await handleGetOverallBestTricksOfUser(db, userId);
 
@@ -190,8 +205,16 @@ export async function setCurrentUserTricks(
 
 		const result = await setUserRank(userId, avg, db);
 
-		res.status(200);
-		res.json({ user_points: avg.toFixed(0), rank: result });
+		// returns average user points, total user points, user rank, total points of all added tricks, trick Difficulty of best trick added
+		res.status(200).json({
+			user_points: avg.toFixed(0),
+			user_total_points: pointsOfBestTricks,
+			trick_total_points: trickTotalPoints,
+			best_trick_difficulty: bestTrickDifficulty,
+			best_trick_name: bestTrickName,
+			rank: result,
+			old_rank: result,
+		});
 	} catch (err) {
 		res.status(404);
 		res.json({ error: err });
@@ -208,17 +231,34 @@ export async function getPointsOfTrickArray(
 ) {
 	let pointsOfTricks: number[] = [];
 	let totalPoints: number = 0;
+	let bestTrickDifficulty: TrickDifficulty = TrickDifficulty.Unknown;
+	let bestTrickName: string = 'Unknown';
 
 	try {
 		for (let i = 0; i < tricks.length; i++) {
-			pointsOfTricks[i] = await getPointsOfTrick(tricks[i], db, userId);
+			const trick: Trick = await getPointsOfTrick(tricks[i], db, userId);
+
+			if (trick.unrecognizedWord) {
+				console.log('[getPointsOfTrickArray]', trick);
+				return [0, trick.Difficulty, bestTrickName, trick.unrecognizedWord];
+			}
+
+			pointsOfTricks[i] = trick.Points;
 			totalPoints += pointsOfTricks[i];
+
+			if (
+				TrickDifficultyOrder[bestTrickDifficulty] <
+				TrickDifficultyOrder[trick.Difficulty]
+			) {
+				bestTrickDifficulty = trick.Difficulty;
+				bestTrickName = trick.Name;
+			}
 		}
 
-		return totalPoints;
+		return [totalPoints, bestTrickDifficulty, bestTrickName, null];
 	} catch (err) {
 		console.warn('Error setting up trick array: ', err);
-		return 0;
+		return [0, TrickDifficulty.Beginner, bestTrickName, null];
 	}
 }
 
@@ -226,9 +266,9 @@ export async function getPointsOfTrick(
 	trick: TrickFromDb,
 	db: DbConnection,
 	userId: string,
-): Promise<number> {
+): Promise<Trick> {
 	const conn = await db.connect();
-	if (conn instanceof Err) return 0;
+	if (conn instanceof Err) return {} as Trick;
 
 	try {
 		await conn.beginTransaction();
@@ -248,7 +288,14 @@ export async function getPointsOfTrick(
 		const description = new TrickDescription(trickNameParts, [
 			{ spot: trickSpot },
 		]);
+
+		console.log('trick description', description);
+
 		let created_trick: Trick = new Trick(description, allTricksData);
+
+		if (typeof created_trick.unrecognizedWord === 'string') {
+			return created_trick;
+		}
 
 		console.log('created_trick:', created_trick);
 
@@ -300,11 +347,11 @@ export async function getPointsOfTrick(
 		}
 
 		await conn.commit();
-		return created_trick.Points;
+		return created_trick;
 	} catch (err) {
 		await conn.rollback();
 		console.warn('Error setting up trick: ', err);
-		return 0;
+		return {} as Trick;
 	} finally {
 		conn.release();
 	}

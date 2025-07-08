@@ -13,7 +13,6 @@ import { errorHandler, Err } from '../constants/errors.js';
 import { dbConnection } from '../constants/dbConnection.js';
 
 const router = express.Router({ mergeParams: true });
-const secret = process.env.CLERK_SECRET_KEY!;
 
 router.use(express.json());
 
@@ -47,7 +46,7 @@ router.get('/:trickId', async (req, res) => {
 /*
 curl -H 'Authorization: Bearer "clerk-token" http://localhost:4000/api/tricks/${userId}/setTricks -b "tricks-json"
 
-current-user initiaizes/updates his (5) best tricks
+current-user initiaizes/updates his best tricks
 */
 
 router.post('/:userId/setTricks', async (req, res) => {

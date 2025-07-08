@@ -19,6 +19,7 @@ export interface TrickPart {
 	isBlock(): boolean;
 	containsWord(word: string): boolean;
 	getWords(): Array<string>;
+	unrecognizedWord?: string | null | undefined;
 }
 
 export class Trick {
@@ -29,6 +30,7 @@ export class Trick {
 	Types: TrickType[] = [];
 	Costum: boolean;
 	Difficulty: TrickDifficulty;
+	unrecognizedWord: string | null | undefined;
 
 	constructor(description: TrickDescription, allTricksData?: AllTricksData) {
 		this.Name = description.parts.join(' ');
@@ -51,6 +53,13 @@ export class Trick {
 		}
 
 		let words: Array<Word> = description.toWords();
+
+		// if parameter "unrecognizedWord" is a string value (the word itself) that means this word in unknown.
+		// Thus the trick evaluation process must abort
+		this.unrecognizedWord =
+			words.find((word) => typeof word.unrecognizedWord === 'string')
+				?.unrecognizedWord || null;
+
 		let trickParts: Array<TrickPart> = [];
 		let blockWords: Array<Word> = [];
 
@@ -93,9 +102,10 @@ export class Trick {
 		idxFirstBlock: number | undefined,
 	): asserts idxFirstBlock is number {
 		if (typeof idxFirstBlock == 'undefined') {
-			throw new Error(
+			console.warn(
 				'Trick cannot be initialized because the given Array<TrickPart> has no Blocks',
 			);
+			this.unrecognizedWord;
 		}
 	}
 
@@ -196,8 +206,10 @@ export class TrickDescription {
 	toWords(): Array<Word> {
 		let array: Array<Word> = [];
 		for (const part of this.parts) {
-			array.push(new Word(part));
+			const newWord = new Word(part);
+			array.push(newWord);
 		}
+
 		return array;
 	}
 }

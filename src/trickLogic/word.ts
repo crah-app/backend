@@ -10,6 +10,7 @@ export class Word implements TrickPart {
 	connect: boolean = false;
 	applyToWhole: boolean = false;
 	type?: TrickType;
+	unrecognizedWord?: string | null;
 
 	constructor(word: string) {
 		this.word = word.toLowerCase();
@@ -27,6 +28,11 @@ export class Word implements TrickPart {
 		}
 
 		console.warn('Unrecognised word: ' + word, word.toLowerCase());
+		this.unrecognizedWord = word;
+	}
+
+	isWordUnrecognized(): string | undefined | null {
+		return this.unrecognizedWord;
 	}
 
 	getPercentageBefore(): number {

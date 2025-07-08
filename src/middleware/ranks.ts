@@ -68,18 +68,31 @@ export async function setUserRank(
 	points: number,
 	db: DbConnection,
 ) {
-	const connOrErr = await db.connect();
-	if (connOrErr instanceof Err) throw connOrErr;
-	const conn = connOrErr;
+	try {
+		const connOrErr = await db.connect();
+		if (connOrErr instanceof Err) throw connOrErr;
+		const conn = connOrErr;
 
-	const rank = Rank.getRank(points);
+		const rank = Rank.getRank(points);
 
-	const query = `
+		const query = `
         UPDATE users SET \`rank\` = ?, rankPoints = ?
         WHERE Id = ?
     `;
 
-	await conn.query(query, [rank + 1, points, userId]);
+		const [rows] = await conn.query(
+			`SELECT users.rank FROM users where id = ?`,
+			[userId],
+		);
+		const old_rank = rows;
 
-	return rank;
+		console.log('old_rank', old_rank, 'new rank', rank);
+
+		await conn.query(query, [rank + 1, points, userId]);
+
+		return rank;
+	} catch (error) {
+		console.warn('Error [setUserRank]', error);
+		return 0;
+	}
 }
