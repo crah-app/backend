@@ -74,7 +74,7 @@ CREATE TABLE Posts (
 CREATE TABLE InboxNotifications (
   Id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   UserId VARCHAR(255) NOT NULL,         
-  SenderId VARCHAR(255),               
+  SenderId VARCHAR(255),                
   Type ENUM(
     'friend_request',
     'new_follower',
@@ -290,29 +290,92 @@ CREATE INDEX idx_likes_userid ON Likes(UserId);
 -- ALL TRICKS
 CREATE TABLE AllTricks (
     `Name` VARCHAR(100) NOT NULL PRIMARY KEY,
-    DefaultPoints INT NOT NULL, -- points without the percentage increase of the spot
+    DefaultPoints INT NOT NULL CHECK (DefaultPoints >= 0),
     Costum BOOLEAN DEFAULT FALSE,
     Difficulty ENUM(
-    'Beginner',
-    'Normal',
-    'Intermediate',
-    'Advanced',
-    'Hard',
-    'Very Hard',
-    'Expert',
-    'Impossible',
-    'Goated',
-    'Legendary'
-) NOT NULL,
-	SecondName VARCHAR(100) DEFAULT NULL,
+        'Beginner',
+        'Normal',
+        'Intermediate',
+        'Advanced',
+        'Hard',
+        'Very Hard',
+        'Expert',
+        'Impossible',
+        'Goated',
+        'Legendary'
+    ) NOT NULL,
+    SecondName VARCHAR(100) DEFAULT NULL,
+    GeneralType ENUM("Park", "Street", "Flat")
 );
 
 CREATE TABLE TrickTypes (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     AllTricksName VARCHAR(100) NOT NULL,
-    `Type` ENUM('Balance', 'Rewind', 'Overhead', 'Grab', "Whip", "Rotation", "BodyFlip", "None"),
-    CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
+    `Type` ENUM('Balance', 'Rewind', 'Overhead', 'Grab', 'Whip', 'Rotation', 'BodyFlip', 'None') NOT NULL DEFAULT 'None',
+    CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName)
+        REFERENCES AllTricks(Name)
+        ON DELETE CASCADE ON UPDATE RESTRICT
 );
+
+CREATE TABLE Tricks (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    UserId VARCHAR(255) NOT NULL,
+    Name VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_trick__all_trick FOREIGN KEY (Name)
+        REFERENCES AllTricks(Name)
+        ON DELETE CASCADE ON UPDATE RESTRICT,
+    UNIQUE (UserId, Name),
+    INDEX idx_userid (UserId)
+);
+
+CREATE TABLE GeneralSpots (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    TrickId INT NOT NULL,
+    Points INT NOT NULL CHECK (Points >= 0),
+    Difficulty ENUM(
+        'Beginner',
+        'Normal',
+        'Intermediate',
+        'Advanced',
+        'Hard',
+        'Very Hard',
+        'Expert',
+        'Impossible',
+        'Goated',
+        'Legendary'
+    ) NOT NULL,
+    Spot ENUM('Park', 'Street', 'Flat') NOT NULL,
+    Date DATE,
+    CONSTRAINT fk_general_spot__trick FOREIGN KEY (TrickId)
+        REFERENCES Tricks(Id)
+        ON DELETE CASCADE ON UPDATE RESTRICT,
+    UNIQUE (TrickId, Spot)
+);
+
+CREATE TABLE Spots (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    TrickId INT NOT NULL,
+    GeneralSpot ENUM('Park', 'Street', 'Flat') NOT NULL,
+    Difficulty ENUM(
+        'Beginner',
+        'Normal',
+        'Intermediate',
+        'Advanced',
+        'Hard',
+        'Very Hard',
+        'Expert',
+        'Impossible',
+        'Goated',
+        'Legendary'
+    ) NOT NULL,
+    Spot ENUM('Flat', 'OffLedge', 'DropIn', 'Flyout', 'Air') NOT NULL,
+    Points INT NOT NULL CHECK (Points >= 0),
+    Date DATE,
+    CONSTRAINT fk_spot__trick FOREIGN KEY (TrickId)
+        REFERENCES Tricks(Id)
+        ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
 
 INSERT INTO AllTricks (Name, DefaultPoints, Difficulty, SecondName) VALUES
 ('Kickless', 300, 'Normal', NULL),
@@ -639,60 +702,6 @@ INSERT INTO TrickTypes (AllTricksName, Type) VALUES
 ('Inward to Late Heelwhip', 'Overhead'),
 ('Double Bri', 'Overhead'),
 ('Double Inward', 'Overhead');
-
-
--- TRICKS
-CREATE TABLE Tricks (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    UserId VARCHAR(255) NOT NULL,
-    Name VARCHAR(100) NOT NULL,
-    CONSTRAINT fk_trick__all_trick FOREIGN KEY (Name) REFERENCES AllTricks(Name) ON DELETE CASCADE ON UPDATE RESTRICT
-);
-
--- GENERAL SPOTS (general type of spot)
-CREATE TABLE GeneralSpots (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    TrickId INT NOT NULL,
-    Points INT NOT NULL,
-    Difficulty ENUM(
-    'Beginner',
-    'Normal',
-    'Intermediate',
-    'Advanced',
-    'Hard',
-    'Very Hard',
-    'Expert',
-    'Impossible',
-    'Goated',
-    'Legendary'
-) NOT NULL,
-    Spot ENUM('Park', 'Street', 'Flat') NOT NULL,
-    Date DATE,
-    CONSTRAINT fk_general_spot__trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT
-);
-
--- SPOTS (very specific spots. Not really used in the frontend application by the current-user)
-CREATE TABLE Spots (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    TrickId INT NOT NULL,
-    GeneralSpot ENUM('Park', 'Street', 'Flat') NOT NULL,
-    Difficulty ENUM(
-    'Beginner',
-    'Normal',
-    'Intermediate',
-    'Advanced',
-    'Hard',
-    'Very Hard',
-    'Expert',
-    'Impossible',
-    'Goated',
-    'Legendary'
-) NOT NULL,
-    Spot ENUM('Flat', 'OffLedge', 'DropIn', 'Flyout', 'Air') NOT NULL,
-    Points INT NOT NULL,
-    Date DATE,
-    CONSTRAINT fk_spot__trick FOREIGN KEY (TrickId) REFERENCES Tricks(Id) ON DELETE CASCADE ON UPDATE RESTRICT
-);
 
 ALTER TABLE Tricks
 ADD CONSTRAINT unique_user_trick

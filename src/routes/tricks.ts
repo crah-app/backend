@@ -8,6 +8,8 @@ import {
 	getOverallBestTricksOfUser,
 	getPointsOfTricks,
 	getBestTrickOfUser,
+	getAllTricksFromUsersPerspective,
+	getAllTricksFromUsersPerspectiveByGeneralType,
 } from '../middleware/tricks.js';
 import { errorHandler, Err } from '../constants/errors.js';
 import { dbConnection } from '../constants/dbConnection.js';
@@ -28,6 +30,30 @@ router.post('/points', async (req, res) => {
 /* Get all tricks */
 router.get('/all', async (req, res) => {
 	errorHandler(await getAllTricks(req, res, dbConnection), res);
+});
+
+/* 
+Get all tricks with trick info of the current-user
+
+use bearer
+ */
+router.get('/all/:userId', async (req, res) => {
+	errorHandler(
+		await getAllTricksFromUsersPerspective(req, res, dbConnection),
+		res,
+	);
+});
+
+/* 
+Get all tricks with trick info of the current-user
+
+use bearer
+ */
+router.get('/all/:userId/:generaltype', async (req, res) => {
+	errorHandler(
+		await getAllTricksFromUsersPerspectiveByGeneralType(req, res, dbConnection),
+		res,
+	);
 });
 
 /* Get all tricks of current-user */

@@ -706,3 +706,89 @@ export async function handleGetBestTrickOfUser(
 		conn.release();
 	}
 }
+
+// get all tricks from allTricks table with the users information on each trick
+export async function getAllTricksFromUsersPerspective(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		const userId = sessionToken.sub;
+		const url_userId = req.params.userId;
+
+		if (userId !== url_userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const query = `
+			SELECT
+				at.*,
+				t.Id AS UserTrickId,
+				t.UserId
+				FROM
+				AllTricks at
+				LEFT JOIN
+				Tricks t ON t.Name = at.Name AND t.UserId = ?
+				ORDER BY
+			at.Name ASC;
+		`;
+
+		const [rows] = await conn.query(query, [userId]);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error: [getAllTricksFromUsersPerspective', error);
+		return res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
+	}
+}
+
+// get all tricks from allTricks table with the users information on each trick (generalType)
+export async function getAllTricksFromUsersPerspectiveByGeneralType(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		const userId = sessionToken.sub;
+		const url_userId = req.params.userId;
+
+		const generaltype = req.params.generaltype;
+
+		if (userId !== url_userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const query = `
+		SELECT
+			at.*,
+			t.Id AS UserTrickId,
+			t.UserId
+			FROM
+			AllTricks at
+			LEFT JOIN
+			Tricks t ON t.Name = at.Name AND t.UserId = ?
+			WHERE
+			at.GeneralType = ?
+			ORDER BY
+		at.Name ASC;
+		`;
+
+		const [rows] = await conn.query(query, [userId, generaltype]);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error: [getAllTricksFromUsersPerspective', error);
+		return res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
+	}
+}
