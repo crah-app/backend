@@ -1,7 +1,7 @@
 import archiver from 'archiver';
 import { Request, Response } from 'express';
 import { Err, ErrType } from './../constants/errors.js';
-import DbConnection from './../constants/dbConnection.js';
+import DbConnection, { dbConnection } from './../constants/dbConnection.js';
 
 import dotenv from 'dotenv';
 import { sourceMetadataInterface } from '../types/index.js';
@@ -10,6 +10,8 @@ import {
 	allPostsQueryByUserId,
 	getPostByPostId,
 } from '../dbQuerys/posts.js';
+import { verifySessionToken } from './auth.js';
+import { Rank } from '../trickLogic/rank.js';
 dotenv.config();
 
 export async function getPostById(
@@ -80,23 +82,6 @@ export async function getAllPosts(
 		return err as Err;
 	}
 }
-
-// get post with filter options
-
-// get all posts from a specific rank
-// export async function getAllPostsFromRank(res:Response, req: Request, db : DbConnection) {
-// 	res.json(posts);
-// };
-
-// // get one post from a specific rank
-// export async function getPostFromRank(res:Response, req: Request, db : DbConnection) {
-// 	res.json(posts);
-// };
-
-// // get all posts from all friends by one client
-// export async function getAllPostsFromFriends(res:Response, req: Request, db : DbConnection) {
-// 	res.json(posts);
-// };
 
 // upload post metadata in db after post source files. (video, cover, ...) uploaded to the cloud
 export async function uploadPost(
@@ -183,5 +168,163 @@ export async function setPostLikeStatus(
 		console.warn('Failed modifying like status of post:', err);
 	} finally {
 		conn.release();
+	}
+}
+
+// get posts of all current-user`s friends
+export async function getPostsOfFriends(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await dbConnection.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		const userId = sessionToken.sub;
+		const url_userId = req.params.userId;
+
+		if (userId !== url_userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const query = `
+			SELECT
+			p.*,
+			IFNULL(likes_count, 0) AS likes_count,
+			IFNULL(comments_count, 0) AS comments_count,
+			IFNULL(shares_count, 0) AS shares_count
+			FROM
+			Posts p
+			JOIN
+			(
+				SELECT
+				CASE
+					WHEN UserAId = ? THEN UserBId
+					ELSE UserAId
+				END AS FriendId
+				FROM Friends
+				WHERE UserAId = ? OR UserBId = ?
+			) f ON p.UserId = f.FriendId
+			LEFT JOIN
+			(
+				SELECT PostId, COUNT(*) AS likes_count
+				FROM Likes
+				GROUP BY PostId
+			) l ON p.Id = l.PostId
+			LEFT JOIN
+			(
+				SELECT PostId, COUNT(*) AS comments_count
+				FROM Comments
+				GROUP BY PostId
+			) c ON p.Id = c.PostId
+			LEFT JOIN
+			(
+				SELECT PostId, COUNT(*) AS shares_count
+				FROM Shares
+				GROUP BY PostId
+			) s ON p.Id = s.PostId
+			ORDER BY
+			likes_count DESC,
+			comments_count DESC,
+			shares_count DESC,
+			p.CreatedAt DESC
+			LIMIT 50;
+		`;
+
+		const [rows] = await conn.query(query, [userId]);
+
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error: [getPostsOfFriends]', error);
+		res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
+	}
+}
+
+// get posts from rank
+export async function getPostsFromRank(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const rank = req.params.rank;
+
+		const query = `
+			SELECT
+				p.*,
+				IFNULL(likes_count, 0) AS likes_count,
+				IFNULL(comments_count, 0) AS comments_count,
+				IFNULL(shares_count, 0) AS shares_count
+				FROM
+				Posts p
+				JOIN
+				Users u ON p.UserId = u.Id
+				LEFT JOIN
+				(SELECT PostId, COUNT(*) AS likes_count FROM Likes GROUP BY PostId) l ON p.Id = l.PostId
+				LEFT JOIN
+				(SELECT PostId, COUNT(*) AS comments_count FROM Comments GROUP BY PostId) c ON p.Id = c.PostId
+				LEFT JOIN
+				(SELECT PostId, COUNT(*) AS shares_count FROM Shares GROUP BY PostId) s ON p.Id = s.PostId
+				WHERE
+				u.rank = ?
+				ORDER BY
+				likes_count DESC,
+				comments_count DESC,
+				shares_count DESC,
+				p.CreatedAt DESC
+			LIMIT 50;
+		`;
+
+		const [rows] = await conn.query(query, rank);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error: [getPostsFromRank]', error);
+		return res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
+	}
+}
+
+// get one post from rank
+export async function getPostFromRank(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const rank = req.params.rank;
+		const postId = req.params.postId;
+
+		const query = `
+		SELECT
+		  p.*
+		FROM
+		  Posts p
+		JOIN
+		  Users u ON p.UserId = u.Id
+		WHERE
+		  u.rank = ? AND p.Id = ?
+		ORDER BY
+		  p.CreatedAt DESC
+		LIMIT 50;
+	  `;
+
+		const [rows] = await conn.query(query, [rank, postId]);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error: [getPostsFromRank]', error);
+		return res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
 	}
 }

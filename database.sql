@@ -26,8 +26,10 @@ CREATE TABLE Friends (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     UserAId VARCHAR(255) NOT NULL,
     UserBId VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_friend_a__user FOREIGN KEY (UserAId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT fk_friend_b__user FOREIGN KEY (UserBId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
+    CONSTRAINT fk_friend_a__user FOREIGN KEY (UserAId) REFERENCES Users(Id) ON DELETE CASCADE,
+    CONSTRAINT fk_friend_b__user FOREIGN KEY (UserBId) REFERENCES Users(Id) ON DELETE CASCADE,
+    CONSTRAINT chk_user_order CHECK (UserAId < UserBId),
+    UNIQUE KEY uq_friend_pair (UserAId, UserBId)
 );
 
 -- FRIENDSHIP REQUESTS
@@ -63,7 +65,10 @@ CREATE TABLE Posts (
     SourceKey VARCHAR(255) NULL,
     CoverSourceKey VARCHAR (255) NULL,
     CONSTRAINT fk_post__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    CONSTRAINT chk_content_article CHECK (Type = 'Article' OR Content IS NULL)
+    CONSTRAINT chk_content_article CHECK (
+      (Type = 'Article' AND Content IS NOT NULL)
+      OR (Type != 'Article' AND Content IS NULL)
+    )
 );
 
 CREATE TABLE InboxNotifications (
@@ -106,7 +111,7 @@ CREATE TABLE PostReports (
 -- LIKES
 CREATE TABLE Likes (
     Id INT AUTO_INCREMENT PRIMARY KEY,
-    PostId INT NOT NULL,
+    PostId BIGINT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
     CONSTRAINT fk_like__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT fk_like__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
@@ -115,7 +120,7 @@ CREATE TABLE Likes (
 -- SHARES
 CREATE TABLE Shares (
     Id INT AUTO_INCREMENT PRIMARY KEY,
-    PostId INT NOT NULL,
+    PostId BIGINT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_share__post FOREIGN KEY (PostId) REFERENCES Posts(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
@@ -126,7 +131,7 @@ CREATE TABLE Shares (
 -- COMMENTS
 CREATE TABLE Comments (
     Id INT AUTO_INCREMENT PRIMARY KEY,
-    PostId INT NOT NULL,
+    PostId BIGINT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
     Message VARCHAR(600) NOT NULL,
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -153,7 +158,7 @@ CREATE TABLE Emojies (
 -- REACTIONS
 CREATE TABLE Reactions (
     Id INT AUTO_INCREMENT PRIMARY KEY,
-    PostId INT NOT NULL,
+    PostId BIGINT NOT NULL,
     UserId VARCHAR(255) NOT NULL,
     EmojiId VARCHAR(15) NOT NULL,
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -273,6 +278,14 @@ CREATE TABLE ContributionCommentDislikes (
     CONSTRAINT fk_contribution_comment_dislike__contribution_comment FOREIGN KEY (ContributionCommentId) REFERENCES ContributionComments(Id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT fk_contribution_comment_dislike__user FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
+
+CREATE INDEX idx_friends_usera ON Friends(UserAId);
+CREATE INDEX idx_friends_userb ON Friends(UserBId);
+
+CREATE INDEX idx_posts_userid_createdat ON Posts(UserId, CreatedAt DESC);
+
+CREATE INDEX idx_likes_postid ON Likes(PostId);
+CREATE INDEX idx_likes_userid ON Likes(UserId);
 
 -- ALL TRICKS
 CREATE TABLE AllTricks (

@@ -3,11 +3,11 @@ import { Response, Request } from 'express';
 import {
 	getAllPosts,
 	getAllPostsByUserId,
-	// getAllPostsFromFriends,
-	// getAllPostsFromRank,
 	getPostById,
+	getPostFromRank,
+	getPostsFromRank,
+	getPostsOfFriends,
 	setPostLikeStatus,
-	// getPostFromRank,
 } from '../middleware/posts.js';
 import { dbConnection } from '../constants/dbConnection.js';
 import { errorHandler } from '../constants/errors.js';
@@ -67,28 +67,28 @@ router.get('/all/currentUser/:userId', async (req: Request, res: Response) => {
 /* 
 e.g
 
-curl http://localhost:4000/api/posts/rank/silver/all
-
-returns all posts from the current rank
-*/
-
-router.get('/rank/:rank/all', async (req: Request, res: Response) => {
-	// errorHandler(await getAllPostsFromRank(res, req, dbConnection), res);
-});
-
-/* 
-e.g
-
 curl http://localhost:4000/api/posts/:rank/silver/1
 
 returns one post from the a rank
 */
 
 router.get('/rank/:rank/:postId', async (req: Request, res: Response) => {
-	// errorHandler(await getPostFromRank(res, req, dbConnection), res);
+	errorHandler(await getPostFromRank(res, req, dbConnection), res);
 });
 
 // user likes a post
-router.post('post/:postId/like', async (req: Request, res: Response) => {
+router.post('/:postId/like', async (req: Request, res: Response) => {
 	errorHandler(await setPostLikeStatus(res, req, dbConnection), res);
+});
+
+// get posts of current user friends
+router.get('/:userId/friends', async (req: Request, res: Response) => {
+	errorHandler(await getPostsOfFriends(req, res, dbConnection), res);
+});
+
+/*
+    get posts from rank
+*/
+router.get('/rank/:rank/all', async (req: Request, res: Response) => {
+	errorHandler(await getPostsFromRank(req, res, dbConnection), res);
 });

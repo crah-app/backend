@@ -161,3 +161,42 @@ export async function setRiderTypeOfUser(
 		return err as Err;
 	}
 }
+
+// get friends of user
+export async function getFriendsOfUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+
+		const userId = sessionToken.sub;
+		const url_userId = req.params.userId;
+
+		if (userId !== url_userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const query = `
+		SELECT
+			CASE
+				WHEN UserAId = ? THEN UserBId
+				ELSE UserAId
+			END AS FriendId
+			FROM Friends
+		WHERE UserAId = ? OR UserBId = ?;
+		`;
+
+		const [rows] = await conn.query(query, [userId]);
+		res.status(200).json({ success: true, rows });
+	} catch (error) {
+		console.warn('Error: [getFriendsOfUser]', error);
+		res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
+	}
+}

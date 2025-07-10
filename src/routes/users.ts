@@ -4,6 +4,7 @@ import { dbConnection } from '../constants/dbConnection.js';
 import { errorHandler } from '../constants/errors.js';
 import {
 	getAllUsers,
+	getFriendsOfUser,
 	getUserStats,
 	isUsernameDuplicate,
 	setRiderTypeOfUser,
@@ -61,6 +62,13 @@ use bearer
 
 router.post('/:userId/setRiderType', async (req: Request, res: Response) => {
 	errorHandler(await setRiderTypeOfUser(req, res, dbConnection), res);
+});
+
+/* 
+friends of user
+*/
+router.get('/:userId/friends', async (req: Request, res: Response) => {
+	errorHandler(await getFriendsOfUser(req, res, dbConnection), res);
 });
 
 export default router;
