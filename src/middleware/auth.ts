@@ -31,6 +31,7 @@ export async function verifySessionToken(
 		const token = authHeader?.replace('Bearer ', '');
 
 		if (!token) {
+			resolve({ sessionToken: null });
 			return res.status(401).json({ error: 'No token provided' });
 		}
 
@@ -40,20 +41,22 @@ export async function verifySessionToken(
 			{ algorithms: ['RS256'] },
 			(err, decoded: any) => {
 				if (err) {
-					res.status(400).json({ error: err.message });
 					resolve({ sessionToken: null });
+					return res.status(400).json({ error: err.message });
 				}
 
 				const currentTime = Math.floor(Date.now() / 1000);
 				if (decoded?.exp < currentTime || decoded?.nbf > currentTime) {
-					res.status(401).json({ error: 'Token is expired or not yet valid' });
 					resolve({ sessionToken: null });
+					return res
+						.status(401)
+						.json({ error: 'Token is expired or not yet valid' });
 				}
 
 				const permittedOrigins = ['http://localhost:4000'];
 				if (decoded?.azp && !permittedOrigins.includes(decoded?.azp)) {
-					res.status(403).json({ error: "Invalid 'azp' claim" });
 					resolve({ sessionToken: null });
+					return res.status(403).json({ error: "Invalid 'azp' claim" });
 				}
 
 				resolve({ sessionToken: decoded });

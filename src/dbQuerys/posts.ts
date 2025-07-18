@@ -37,20 +37,39 @@ export const allPostsQuery = `
           GROUP BY PostId
         ) s ON s.PostId = p.Id
   
-        -- Subquery for Comments as JSON
+        -- Subquery for two popular comments
         LEFT JOIN (
-          SELECT PostId,
-                 JSON_ARRAYAGG(
-                   JSON_OBJECT(
-                     'Id', Id,
-                     'UserId', UserId,
-                     'Message', Message,
-                     'CreatedAt', CreatedAt,
-                     'UpdatedAt', UpdatedAt
-                   )
-                 ) AS comments
-          FROM Comments
-          GROUP BY PostId
+          SELECT 
+            ranked.PostId,
+            JSON_ARRAYAGG(
+              JSON_OBJECT(
+                'Id', ranked.Id,
+                'UserId', ranked.UserId,
+                'UserName', ranked.UserName,
+                'UserAvatar', ranked.UserAvatar,
+                'Message', ranked.Message,
+                'CreatedAt', ranked.CreatedAt,
+                'UpdatedAt', ranked.UpdatedAt,
+                'likes', IFNULL(ranked.likeCount, 0)
+              )
+            ) AS comments
+          FROM (
+            SELECT 
+              c.*,
+              u.Name AS UserName,
+              u.avatar AS UserAvatar,
+              IFNULL(cl.likeCount, 0) AS likeCount,
+              ROW_NUMBER() OVER (PARTITION BY c.PostId ORDER BY IFNULL(cl.likeCount, 0) DESC) AS rn
+            FROM Comments c
+            JOIN Users u ON u.Id = c.UserId
+            LEFT JOIN (
+              SELECT CommentId, COUNT(*) AS likeCount
+              FROM CommentLikes
+              GROUP BY CommentId
+            ) cl ON cl.CommentId = c.Id
+          ) ranked
+          WHERE ranked.rn <= 2
+          GROUP BY ranked.PostId
         ) c ON c.PostId = p.Id
   
         ORDER BY p.CreatedAt DESC

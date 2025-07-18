@@ -1,6 +1,6 @@
 import archiver from 'archiver';
 import { Request, Response } from 'express';
-import { Err, ErrType } from './../constants/errors.js';
+import { Err } from './../constants/errors.js';
 import DbConnection, { dbConnection } from './../constants/dbConnection.js';
 
 import dotenv from 'dotenv';
@@ -11,7 +11,8 @@ import {
 	getPostByPostId,
 } from '../dbQuerys/posts.js';
 import { verifySessionToken } from './auth.js';
-import { Rank } from '../trickLogic/rank.js';
+import { Comment } from '../types/userPost.js';
+import { ResultSetHeader } from 'mysql2';
 dotenv.config();
 
 export async function getPostById(
@@ -21,9 +22,12 @@ export async function getPostById(
 ): Promise<Err | void> {
 	try {
 		const postId = req.body.postId;
+		const result = await getAllPostsHandler(db, null, postId);
 
-		const result = await getAllPosts(res, req, db, null, postId);
+		res.status(200).json(result);
 	} catch (err) {
+		console.warn('Error [getPostById]', err);
+		res.status(500).json({ error: err });
 		return err as Err;
 	}
 }
@@ -36,19 +40,18 @@ export async function getAllPostsByUserId(
 ): Promise<Err | void> {
 	try {
 		const userId = req.params.userId;
+		const result = await getAllPostsHandler(db, userId);
 
-		const result = await getAllPosts(res, req, db, userId);
-
-		res.json(result);
+		res.status(200).json(result);
 	} catch (err) {
+		console.warn('Error [getAllPostsbyUserId]', err);
+		res.status(500).json({ error: err });
 		return err as Err;
 	}
 }
 
 // get all posts
-export async function getAllPosts(
-	res: Response,
-	req: Request,
+export async function getAllPostsHandler(
 	db: DbConnection,
 	userId: string | null = null,
 	postId: number | null = null,
@@ -69,17 +72,40 @@ export async function getAllPosts(
 		const conn = await db.connect();
 		if (conn instanceof Err) return conn;
 
-		console.log(userId);
-
-		const [rows] = await conn.execute(allPostsQueryByUserId, values);
-
+		const [rows] = await conn.execute(query, values);
 		conn.release();
 
-		res.json(rows);
 		return rows;
 	} catch (err) {
-		res.status(500).json({ error: 'Failed to load all posts', msg: err });
+		console.warn('Error [getAllPostsHandler]', err);
 		return err as Err;
+	}
+}
+
+export async function getAllPosts(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+	url_userId: string | null = null,
+	postId: number | null = null,
+) {
+	const { sessionToken } = await verifySessionToken(req, res);
+	if (!sessionToken) return;
+
+	try {
+		const userId = sessionToken.sub;
+
+		if (userId !== url_userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const result = await getAllPostsHandler(dbConnection, url_userId, postId);
+		return res.status(200).json(result);
+	} catch (err) {
+		console.warn('Error [getAllPosts]', err);
+		return res
+			.status(500)
+			.json({ error: 'Failed to load all posts', msg: err });
 	}
 }
 
@@ -155,13 +181,20 @@ export async function setPostLikeStatus(
 
 	try {
 		const postId: number = Number(req.params.postId);
-		const likeStatus: boolean = req.body.userLikedPost;
+		const userId = req.params.userId;
+		const likeStatus: boolean = req.body.currentUserLiked; // true : like , false : dislike
 
-		const query = `
-			
+		const query = likeStatus
+			? `
+		  INSERT IGNORE INTO Likes (PostId, UserId)
+		  VALUES (?, ?);
+		`
+			: `
+		  DELETE FROM Likes
+		  WHERE PostId = ? AND UserId = ?;
 		`;
 
-		const [rows] = await conn.query(query, [postId]);
+		const [rows] = await conn.query(query, [postId, userId]);
 
 		res.json(rows);
 	} catch (err) {
@@ -171,10 +204,57 @@ export async function setPostLikeStatus(
 	}
 }
 
+// add comment
+export async function setPostComment(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	const connOrErr = await db.connect();
+	if (connOrErr instanceof Err) throw connOrErr;
+	const conn = connOrErr;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
+		const url_userId = req.params.userId;
+		const postId: number = Number(req.params.postId);
+		const comment: Comment = req.body.comment;
+
+		if (sessionToken.sub !== url_userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const query = `
+		INSERT INTO Comments (PostId, UserId, Message)
+		VALUES (?, ?, ?);
+	  `;
+
+		const [result] = await conn.query<ResultSetHeader>(query, [
+			postId,
+			url_userId,
+			comment.Message,
+		]);
+
+		res.status(201).json({
+			success: true,
+			insertedId: result.insertId,
+		});
+	} catch (err) {
+		console.warn('Error [setPostComment]:', err);
+		return res
+			.status(500)
+			.json({ error: 'Post comment operation failed', msg: err });
+	} finally {
+		if (conn) conn.release();
+	}
+}
+
 // get posts of all current-user`s friends
 export async function getPostsOfFriends(
-	req: Request,
 	res: Response,
+	req: Request,
 	db: DbConnection,
 ) {
 	const conn = await dbConnection.connect();
@@ -182,6 +262,8 @@ export async function getPostsOfFriends(
 
 	try {
 		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
 		const userId = sessionToken.sub;
 		const url_userId = req.params.userId;
 
@@ -234,7 +316,6 @@ export async function getPostsOfFriends(
 		`;
 
 		const [rows] = await conn.query(query, [userId]);
-
 		res.status(200).json(rows);
 	} catch (error) {
 		console.warn('Error: [getPostsOfFriends]', error);
@@ -324,6 +405,51 @@ export async function getPostFromRank(
 	} catch (error) {
 		console.warn('Error: [getPostsFromRank]', error);
 		return res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
+	}
+}
+
+export async function getCommentsOfPost(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const postId = req.params.postId;
+
+		const query = `
+			SELECT 
+			c.Id,
+			c.PostId,
+			c.UserId,
+			u.Name AS UserName,
+			u.avatar AS UserAvatar,
+			c.Message,
+			c.CreatedAt,
+			c.UpdatedAt,
+			IFNULL(cl.likeCount, 0) AS likes
+			FROM Comments c
+			JOIN Users u ON u.Id = c.UserId
+			LEFT JOIN (
+			SELECT CommentId, COUNT(*) AS likeCount
+			FROM CommentLikes
+			GROUP BY CommentId
+			) cl ON cl.CommentId = c.Id
+			WHERE c.PostId = ?
+			ORDER BY likes DESC, c.CreatedAt DESC;		
+		`;
+
+		const [rows] = await conn.query(query, [postId]);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error [getCommentsPost]', error);
+		return res
+			.status(500)
+			.json({ error: `Error requesting all comments of a post`, msg: error });
 	} finally {
 		if (conn) conn.release();
 	}

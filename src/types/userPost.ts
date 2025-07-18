@@ -81,3 +81,12 @@ export enum UserPostType {
 	music = 'Music', // A beat or song
 	text = 'Text', // small text. Kinda like a tweet
 }
+
+export type Comment = {
+	Id?: number; // do not parse since it is auto increment
+	PostId: number;
+	UserId: string;
+	Message: string;
+	CreatedAt: Date;
+	updatedAt: Date;
+};
