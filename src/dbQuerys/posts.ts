@@ -50,7 +50,8 @@ export const allPostsQuery = `
                 'Message', ranked.Message,
                 'CreatedAt', ranked.CreatedAt,
                 'UpdatedAt', ranked.UpdatedAt,
-                'likes', IFNULL(ranked.likeCount, 0)
+                'likes', IFNULL(ranked.likeCount, 0),
+                'liked', ranked.liked
               )
             ) AS comments
           FROM (
@@ -59,6 +60,11 @@ export const allPostsQuery = `
               u.Name AS UserName,
               u.avatar AS UserAvatar,
               IFNULL(cl.likeCount, 0) AS likeCount,
+              EXISTS (
+                SELECT 1
+                FROM CommentLikes cl2
+                WHERE cl2.CommentId = c.Id AND cl2.UserId = ?
+              ) AS liked,
               ROW_NUMBER() OVER (PARTITION BY c.PostId ORDER BY IFNULL(cl.likeCount, 0) DESC) AS rn
             FROM Comments c
             JOIN Users u ON u.Id = c.UserId

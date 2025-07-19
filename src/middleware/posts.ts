@@ -67,7 +67,7 @@ export async function getAllPostsHandler(
 			? [userId, userId]
 			: postId
 			? [userId, postId]
-			: [userId];
+			: [userId, userId];
 
 		const conn = await db.connect();
 		if (conn instanceof Err) return conn;
@@ -420,6 +420,7 @@ export async function getCommentsOfPost(
 
 	try {
 		const postId = req.params.postId;
+		const userId = req.params.userId;
 
 		const query = `
 			SELECT 
@@ -431,7 +432,12 @@ export async function getCommentsOfPost(
 			c.Message,
 			c.CreatedAt,
 			c.UpdatedAt,
-			IFNULL(cl.likeCount, 0) AS likes
+			IFNULL(cl.likeCount, 0) AS likes,
+			EXISTS (
+				SELECT 1
+				FROM CommentLikes cl2
+				WHERE cl2.CommentId = c.Id AND cl2.UserId = ?
+			) AS liked
 			FROM Comments c
 			JOIN Users u ON u.Id = c.UserId
 			LEFT JOIN (
@@ -440,10 +446,10 @@ export async function getCommentsOfPost(
 			GROUP BY CommentId
 			) cl ON cl.CommentId = c.Id
 			WHERE c.PostId = ?
-			ORDER BY likes DESC, c.CreatedAt DESC;		
+			ORDER BY likes DESC, c.CreatedAt DESC;
 		`;
 
-		const [rows] = await conn.query(query, [postId]);
+		const [rows] = await conn.query(query, [userId, postId]);
 		res.status(200).json(rows);
 	} catch (error) {
 		console.warn('Error [getCommentsPost]', error);
@@ -452,5 +458,48 @@ export async function getCommentsOfPost(
 			.json({ error: `Error requesting all comments of a post`, msg: error });
 	} finally {
 		if (conn) conn.release();
+	}
+}
+
+// user likes/dislikes a comment
+export async function setCommentLike(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
+		const userId = sessionToken.sub;
+		const url_userId = req.params.userId;
+		const postId = req.params.postId;
+		const commentId = req.params.commentId;
+		const { like } = req.body;
+
+		if (userId !== url_userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const conn = await db.connect();
+		if (conn instanceof Err) throw conn;
+
+		const query = like
+			? `
+		INSERT IGNORE INTO CommentLikes (CommentId, UserId) VALUES (?, ?)
+		`
+			: `
+		DELETE FROM CommentLikes WHERE CommentId = ? AND UserId = ?
+		`;
+
+		const [rows] = await conn.query(query, [commentId, userId]);
+
+		conn.release();
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error [setCommentLike]', error);
+		return res
+			.status(500)
+			.json({ error: 'Error modifying like status of comment', msg: error });
 	}
 }

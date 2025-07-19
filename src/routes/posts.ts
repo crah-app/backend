@@ -8,6 +8,7 @@ import {
 	getPostFromRank,
 	getPostsFromRank,
 	getPostsOfFriends,
+	setCommentLike,
 	setPostComment,
 	setPostLikeStatus,
 } from '../middleware/posts.js';
@@ -53,7 +54,7 @@ router.get('/rank/:rank/all', async (req: Request, res: Response) => {
 	errorHandler(await getPostsFromRank(req, res, dbConnection), res);
 });
 
-router.get('/:postId/comments', async (req: Request, res: Response) => {
+router.get('/:postId/comments/:userId', async (req: Request, res: Response) => {
 	errorHandler(await getCommentsOfPost(res, req, dbConnection), res);
 });
 
@@ -66,3 +67,11 @@ router.post('/:postId/like/:userId', async (req: Request, res: Response) => {
 router.post('/:postId/comment/:userId', async (req: Request, res: Response) => {
 	errorHandler(await setPostComment(res, req, dbConnection), res);
 });
+
+// user likes comment
+router.post(
+	'/comment/:commentId/like/:userId',
+	async (req: Request, res: Response) => {
+		errorHandler(await setCommentLike(res, req, dbConnection), res);
+	},
+);
