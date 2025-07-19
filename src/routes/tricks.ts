@@ -11,7 +11,7 @@ import {
 	getAllTricksFromUsersPerspective,
 	getAllTricksFromUsersPerspectiveByGeneralType,
 } from '../middleware/tricks.js';
-import { errorHandler, Err } from '../constants/errors.js';
+import { errorHandler } from '../constants/errors.js';
 import { dbConnection } from '../constants/dbConnection.js';
 
 const router = express.Router({ mergeParams: true });
@@ -98,6 +98,7 @@ router.get('/:userId/bestFiveOverall', async (req, res) => {
 /* 
 	get best trick of user
 */
+
 router.get('/:userId/best', async (req, res) => {
 	errorHandler(await getBestTrickOfUser(req, res, dbConnection), res);
 });

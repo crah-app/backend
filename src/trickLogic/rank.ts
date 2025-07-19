@@ -20,4 +20,25 @@ export namespace Rank {
 		if (points > 200) return Rank.Bronze;
 		return Rank.Wood;
 	}
+
+	export function getRankIndexByName(rank: string): number {
+		switch (rank) {
+			case 'Wood':
+				return Rank.Wood;
+			case 'Bronze':
+				return Rank.Bronze;
+			case 'Silver':
+				return Rank.Silver;
+			case 'Gold':
+				return Rank.Gold;
+			case 'Platinum':
+				return Rank.Platinum;
+			case 'Diamond':
+				return Rank.Diamond;
+			case 'Legendary':
+				return Rank.Legendary;
+			default:
+				return Rank.Wood;
+		}
+	}
 }

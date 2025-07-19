@@ -176,6 +176,7 @@ export async function setCurrentUserTricks(
 			trickTotalPoints,
 			bestTrickDifficulty,
 			bestTrickName,
+			bestTrickSpots,
 			unrecognizedWord,
 		] = await getPointsOfTrickArray(tricks as TrickFromDb[], db, userId);
 
@@ -203,7 +204,7 @@ export async function setCurrentUserTricks(
 		// @ts-ignore
 		const avg = pointsOfBestTricks / bestTricks.rows.length;
 
-		const result = await setUserRank(userId, avg, db);
+		const { new_rank, old_rank } = await setUserRank(userId, avg, db);
 
 		// returns average user points, total user points, user rank, total points of all added tricks, trick Difficulty of best trick added
 		res.status(200).json({
@@ -212,12 +213,13 @@ export async function setCurrentUserTricks(
 			trick_total_points: trickTotalPoints,
 			best_trick_difficulty: bestTrickDifficulty,
 			best_trick_name: bestTrickName,
-			rank: result,
-			old_rank: result,
+			best_trick_spots: bestTrickSpots,
+			new_rank,
+			old_rank,
 		});
 	} catch (err) {
-		res.status(404);
-		res.json({ error: err });
+		res.status(500).json({ error: err });
+		console.warn('Error [setCurrentUserTricks]', err);
 		return err as Err;
 	}
 }
@@ -232,7 +234,11 @@ export async function getPointsOfTrickArray(
 	let pointsOfTricks: number[] = [];
 	let totalPoints: number = 0;
 	let bestTrickDifficulty: TrickDifficulty = TrickDifficulty.Unknown;
-	let bestTrickName: string = 'Unknown';
+	let bestTrickName: string = 'Unknown 0';
+	let bestTrickSpots: {
+		spot: GeneralSpot;
+		date?: Date;
+	}[] = [];
 
 	try {
 		for (let i = 0; i < tricks.length; i++) {
@@ -240,7 +246,13 @@ export async function getPointsOfTrickArray(
 
 			if (trick.unrecognizedWord) {
 				console.log('[getPointsOfTrickArray]', trick);
-				return [0, trick.Difficulty, bestTrickName, trick.unrecognizedWord];
+				return [
+					0,
+					trick.Difficulty,
+					bestTrickName,
+					bestTrickSpots,
+					trick.unrecognizedWord,
+				];
 			}
 
 			pointsOfTricks[i] = trick.Points;
@@ -252,13 +264,20 @@ export async function getPointsOfTrickArray(
 			) {
 				bestTrickDifficulty = trick.Difficulty;
 				bestTrickName = trick.Name;
+				bestTrickSpots = trick.Spots;
 			}
 		}
 
-		return [totalPoints, bestTrickDifficulty, bestTrickName, null];
+		return [
+			totalPoints,
+			bestTrickDifficulty,
+			bestTrickName,
+			bestTrickSpots,
+			null,
+		];
 	} catch (err) {
 		console.warn('Error setting up trick array: ', err);
-		return [0, TrickDifficulty.Beginner, bestTrickName, null];
+		return [0, TrickDifficulty.Beginner, bestTrickName, bestTrickSpots, null];
 	}
 }
 
