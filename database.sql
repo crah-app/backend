@@ -305,13 +305,13 @@ CREATE TABLE AllTricks (
         'Legendary'
     ) NOT NULL,
     SecondName VARCHAR(100) DEFAULT NULL,
-    GeneralType ENUM("Park", "Street", "Flat")
+    GeneralType ENUM("Park", "Street", "Flat", "All") DEFAULT "All" -- "All" can also be referred as "Generic" 
 );
 
 CREATE TABLE TrickTypes (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     AllTricksName VARCHAR(100) NOT NULL,
-    `Type` ENUM('Balance', 'Rewind', 'Overhead', 'Grab', 'Whip', 'Rotation', 'BodyFlip', 'None') NOT NULL DEFAULT 'None',
+    `Type` ENUM('Balance', 'Rewind', 'Overhead', 'Grab', 'Whip', 'Rotation', 'BodyFlip', "Twist", "Stall", 'None') NOT NULL DEFAULT 'None',
     CONSTRAINT fk_trick_types__all_tricks FOREIGN KEY (AllTricksName)
         REFERENCES AllTricks(Name)
         ON DELETE CASCADE ON UPDATE RESTRICT

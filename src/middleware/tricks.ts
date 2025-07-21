@@ -323,7 +323,7 @@ export async function getPointsOfTrick(
 			await addTrickToAllTricks(conn, created_trick.Name, {
 				Name: created_trick.Name,
 				DefaultPoints: created_trick.DefaultPoints,
-				Costum: created_trick.Costum,
+				Costum: true, // if trick does not exist yet it has to be costum
 				Difficulty: created_trick.getDefaultDifficulty(),
 				Types: created_trick.Types,
 			});
@@ -778,6 +778,8 @@ export async function getAllTricksFromUsersPerspectiveByGeneralType(
 
 	try {
 		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
 		const userId = sessionToken.sub;
 		const url_userId = req.params.userId;
 
@@ -788,18 +790,34 @@ export async function getAllTricksFromUsersPerspectiveByGeneralType(
 		}
 
 		const query = `
-		SELECT
+			SELECT
 			at.*,
 			t.Id AS UserTrickId,
-			t.UserId
+			t.UserId,
+			tt.Type AS TrickType,
+			COALESCE(
+				JSON_ARRAYAGG(
+				JSON_OBJECT(
+					'SpotId', gs.Id,
+					'Points', gs.Points,
+					'Difficulty', gs.Difficulty,
+					'Spot', gs.Spot,
+					'Date', gs.Date
+				)
+				),
+				JSON_ARRAY()
+			) AS GeneralSpots
 			FROM
 			AllTricks at
-			LEFT JOIN
-			Tricks t ON t.Name = at.Name AND t.UserId = ?
+			LEFT JOIN Tricks t ON t.Name = at.Name AND t.UserId = ?
+			LEFT JOIN TrickTypes tt ON tt.AllTricksName = at.Name
+			LEFT JOIN GeneralSpots gs ON gs.TrickId = t.Id
 			WHERE
 			at.GeneralType = ?
+			GROUP BY
+			at.Name, t.Id, t.UserId, tt.Type
 			ORDER BY
-		at.Name ASC;
+			at.Name ASC;
 		`;
 
 		const [rows] = await conn.query(query, [userId, generaltype]);
