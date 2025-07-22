@@ -4,6 +4,8 @@ import {
 	getAllPosts,
 	getAllPostsByUserId,
 	getCommentsOfPost,
+	getLatelyPostsBySpecificPostType,
+	getPopularPosts,
 	getPostById,
 	getPostFromRank,
 	getPostsFromRank,
@@ -28,6 +30,39 @@ router.get('/post/:postId', async (req: Request, res: Response) => {
 router.get('/user/:userId', async (req: Request, res: Response) => {
 	errorHandler(await getAllPostsByUserId(res, req, dbConnection), res);
 });
+
+// get most popular posts of the last 90 days
+// bearer
+router.get(
+	'/popular/:offset/:limit/:userId',
+	async (req: Request, res: Response) => {
+		errorHandler(await getPopularPosts(res, req, dbConnection), res);
+	},
+);
+
+// get lately/popular videos
+// bearer
+router.get(
+	'/:postType/:offset/:limit/:userId',
+	async (req: Request, res: Response) => {
+		errorHandler(
+			await getLatelyPostsBySpecificPostType(res, req, dbConnection),
+			res,
+		);
+	},
+);
+
+// get lately/popular articles
+// bearer
+router.get(
+	'/:postType/:offset/:limit/:userId',
+	async (req: Request, res: Response) => {
+		errorHandler(
+			await getLatelyPostsBySpecificPostType(res, req, dbConnection),
+			res,
+		);
+	},
+);
 
 // get all posts
 router.get('/all/currentUser/:userId', async (req: Request, res: Response) => {

@@ -829,3 +829,57 @@ export async function getAllTricksFromUsersPerspectiveByGeneralType(
 		if (conn) conn.release();
 	}
 }
+
+// get lately landed tricks
+export async function getLateyLandedTricks(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const userId = req.params.userId;
+		const offset = Number(req.params.offset);
+		const limit = Number(req.params.limit);
+
+		const query = `
+			SELECT
+			at.*,
+			t.Id AS UserTrickId,
+			t.UserId,
+			tt.Type AS TrickType,
+			COALESCE(
+				JSON_ARRAYAGG(
+				JSON_OBJECT(
+					'SpotId', gs.Id,
+					'Points', gs.Points,
+					'Difficulty', gs.Difficulty,
+					'Spot', gs.Spot,
+					'Date', gs.Date
+				)
+				),
+				JSON_ARRAY()
+			) AS GeneralSpots
+			FROM
+			AllTricks at
+			LEFT JOIN Tricks t ON t.Name = at.Name AND t.UserId = ?
+			LEFT JOIN TrickTypes tt ON tt.AllTricksName = at.Name
+			LEFT JOIN GeneralSpots gs ON gs.TrickId = t.Id
+			GROUP BY
+			at.Name, t.Id, t.UserId, tt.Type
+			ORDER BY CreatedAt DESC
+			LIMIT ? OFFSET ?;
+		`;
+
+		const [rows] = await conn.query(query, [userId, limit, offset]);
+		console.log(rows);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error [getLatelyLandedTricks]', error);
+		return res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
+	}
+}

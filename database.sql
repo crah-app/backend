@@ -56,7 +56,7 @@ CREATE TABLE Follows (
 CREATE TABLE Posts (
     Id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     UserId VARCHAR(255) NOT NULL,
-    Type ENUM('Article', 'Video', 'Image', 'Text', 'Music') NOT NULL,
+    Type ENUM('Article', 'Video', 'Image/Text', 'Music') NOT NULL,
     Title VARCHAR(100),
     Description TEXT NOT NULL,
     Content TEXT,   -- markdown article
@@ -305,7 +305,9 @@ CREATE TABLE AllTricks (
         'Legendary'
     ) NOT NULL,
     SecondName VARCHAR(100) DEFAULT NULL,
-    GeneralType ENUM("Park", "Street", "Flat", "All") DEFAULT "All" -- "All" can also be referred as "Generic" 
+    GeneralType ENUM("Park", "Street", "Flat", "All") DEFAULT "All", -- "All" can also be referred as "Generic" 
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE TrickTypes (

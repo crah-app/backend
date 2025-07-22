@@ -23,7 +23,7 @@ curl http://localhost:4000/api/users/all
 */
 
 router.get('/all', async (req: Request, res: Response) => {
-	errorHandler(await getAllUsers(res), res);
+	errorHandler(await getAllUsers(res, req, dbConnection), res);
 });
 
 /* 

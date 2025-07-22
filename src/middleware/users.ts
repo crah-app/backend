@@ -13,7 +13,7 @@ import {
 // export to /types
 type UserSetting = 'setting01' | 'setting02';
 
-export async function getAllUsers(res: Response) {
+export async function getAllClerkUsers(res: Response) {
 	const clerkClient = createClerkClient({
 		secretKey: process.env.CLERK_SECRET_KEY,
 		publishableKey: process.env.CLERK_PUBLIC_KEY,
@@ -23,6 +23,29 @@ export async function getAllUsers(res: Response) {
 	const allUsers = await clerkClient.users.getUserList();
 
 	res.json(allUsers.data);
+}
+
+export async function getAllUsers(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const query = `
+		SELECT * FROM users
+	`;
+
+		const [rows] = await conn.query(query);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error [getAllUsers]', error);
+		res.status(500).json({ error });
+	} finally {
+		if (conn) conn.release();
+	}
 }
 
 export async function getUserStats(

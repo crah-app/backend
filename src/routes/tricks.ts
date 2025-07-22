@@ -10,6 +10,7 @@ import {
 	getBestTrickOfUser,
 	getAllTricksFromUsersPerspective,
 	getAllTricksFromUsersPerspectiveByGeneralType,
+	getLateyLandedTricks,
 } from '../middleware/tricks.js';
 import { errorHandler } from '../constants/errors.js';
 import { dbConnection } from '../constants/dbConnection.js';
@@ -30,6 +31,11 @@ router.post('/points', async (req, res) => {
 /* Get all tricks */
 router.get('/all', async (req, res) => {
 	errorHandler(await getAllTricks(req, res, dbConnection), res);
+});
+
+// get lately created and lately landed tricks
+router.get('/lately/:offset/:limit/:userId', async (req, res) => {
+	errorHandler(await getLateyLandedTricks(res, req, dbConnection), res);
 });
 
 /* 
