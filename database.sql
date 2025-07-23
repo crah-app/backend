@@ -726,6 +726,7 @@ ALTER TABLE GeneralSpots
 ADD CONSTRAINT unique_user_trick_spot
 UNIQUE (TrickId, Spot);
 
+ALTER TABLE GeneralSpots ADD INDEX idx_trickid_points (TrickId, Points DESC);
 
 -- CHATS
 CREATE TABLE Chats (

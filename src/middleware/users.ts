@@ -2,13 +2,13 @@ import { Request, Response } from 'express';
 import { createClerkClient } from '@clerk/backend';
 import { Err, ErrType } from '../constants/errors.js';
 import DbConnection from './../constants/dbConnection.js';
-import { Pool } from 'mysql2';
 import { verifySessionToken } from './auth.js';
 import {
 	handleGetBestTrickOfUser,
 	handleGetBestTricksOfUser,
 	handleGetOverallBestTricksOfUser,
 } from './tricks.js';
+import { ranks } from '../types/index.js';
 
 // export to /types
 type UserSetting = 'setting01' | 'setting02';
@@ -221,5 +221,197 @@ export async function getFriendsOfUser(
 		res.status(500).json({ error });
 	} finally {
 		if (conn) conn.release();
+	}
+}
+
+// get users of a specific rank
+export async function getRidersOfSpecificRank(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const rank = req.params.rank;
+		const currentIndex = ranks.indexOf(rank);
+
+		if (currentIndex === -1) {
+			return res.status(400).json({ error: 'Invalid rank' });
+		}
+
+		const nextRank = ranks[currentIndex + 1] || null;
+
+		const limit = Number(req.params.limit);
+		const offset = Number(req.params.offset);
+
+		const query = `
+SELECT 
+  u.*,
+  ROW_NUMBER() OVER (
+    PARTITION BY u.\`rank\`
+    ORDER BY u.rankPoints DESC
+  ) AS rankIndex,
+  bestTrick.Id AS TrickId,   
+  bestTrick.Name AS TrickName,
+  bestTrick.Points AS TrickPoints,
+  bestTrick.Difficulty AS TrickDifficulty,
+  bestTrick.Spot AS TrickSpot,
+  bestTrick.Date AS TrickDate
+FROM Users u
+LEFT JOIN (
+  SELECT 
+    t.Id,
+    t.UserId,
+    t.Name,
+    gs.Points,
+    gs.Difficulty,
+    gs.Spot,
+    gs.Date
+  FROM Tricks t
+  JOIN GeneralSpots gs ON t.Id = gs.TrickId
+  JOIN (
+    SELECT t.UserId, MAX(gs.Points) AS MaxPoints
+    FROM Tricks t
+    JOIN GeneralSpots gs ON t.Id = gs.TrickId
+    GROUP BY t.UserId
+  ) best ON best.UserId = t.UserId AND best.MaxPoints = gs.Points
+) bestTrick ON u.Id = bestTrick.UserId
+WHERE u.\`rank\` = ?
+ORDER BY u.rankPoints DESC
+LIMIT ? OFFSET ?;
+		`;
+
+		const [rows] = await conn.query(query, [rank, limit, offset]);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error: [getRidersOfSpecificRank]', error);
+		res.status(500).json({ error });
+	} finally {
+		conn && conn.release();
+	}
+}
+
+// search for ranked user in db
+export async function searchRankedUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	const searchQuery = req.query.q as string | undefined;
+
+	const limit = Number(req.params.limit);
+	const offset = Number(req.params.offset);
+
+	if (!searchQuery || searchQuery.trim().length === 0) {
+		res.status(400).json({ error: 'Missing search query' });
+		return;
+	}
+
+	try {
+		const query = `
+		SELECT 
+		u.*,
+        ROW_NUMBER() OVER (
+      PARTITION BY u.\`rank\`
+      ORDER BY u.rankPoints DESC
+    ) AS rankIndex,
+	bestTrick.Id AS TrickId,   
+	bestTrick.Name AS TrickName,
+	bestTrick.Points AS TrickPoints,
+	bestTrick.Difficulty AS TrickDifficulty,
+	bestTrick.Spot AS TrickSpot,
+	bestTrick.Date AS TrickDate
+		FROM Users u
+		LEFT JOIN (
+		  SELECT 
+			t.Id,
+			t.UserId,
+			t.Name,
+			gs.Points,
+			gs.Difficulty,
+			gs.Spot,
+			gs.Date
+		  FROM Tricks t
+		  JOIN GeneralSpots gs ON t.Id = gs.TrickId
+		  JOIN (
+			SELECT t.UserId, MAX(gs.Points) AS MaxPoints
+			FROM Tricks t
+			JOIN GeneralSpots gs ON t.Id = gs.TrickId
+			GROUP BY t.UserId
+		  ) best ON best.UserId = t.UserId AND best.MaxPoints = gs.Points
+		) bestTrick ON u.Id = bestTrick.UserId
+		WHERE u.Name = ?
+		LIMIT ? OFFSET ?
+	  `;
+
+		const [rows] = await conn.query(query, [searchQuery, limit, offset]);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error [searchRankedUser]', error);
+		res.status(500).json({ error });
+	} finally {
+		conn.release();
+	}
+}
+
+// get global leaderboard
+export async function getGlobalLeaderboard(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	const limit = Number(req.params.limit);
+	const offset = Number(req.params.offset);
+
+	try {
+		const query = `
+		SELECT 
+		u.*,
+        ROW_NUMBER() OVER (
+      ORDER BY u.rankPoints DESC
+    ) AS rankIndex,
+	bestTrick.Id AS TrickId,   
+	bestTrick.Name AS TrickName,
+	bestTrick.Points AS TrickPoints,
+	bestTrick.Difficulty AS TrickDifficulty,
+	bestTrick.Spot AS TrickSpot,
+	bestTrick.Date AS TrickDate
+		FROM Users u
+		LEFT JOIN (
+		  SELECT 
+			t.Id,
+			t.UserId,
+			t.Name,
+			gs.Points,
+			gs.Difficulty,
+			gs.Spot,
+			gs.Date
+		  FROM Tricks t
+		  JOIN GeneralSpots gs ON t.Id = gs.TrickId
+		  JOIN (
+			SELECT t.UserId, MAX(gs.Points) AS MaxPoints
+			FROM Tricks t
+			JOIN GeneralSpots gs ON t.Id = gs.TrickId
+			GROUP BY t.UserId
+		  ) best ON best.UserId = t.UserId AND best.MaxPoints = gs.Points
+		) bestTrick ON u.Id = bestTrick.UserId
+		LIMIT ? OFFSET ?
+	  `;
+
+		const [rows] = await conn.query(query, [limit, offset]);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error [getGloablLeaderboard]', error);
+		res.status(500).json({ error });
+	} finally {
+		conn.release();
 	}
 }

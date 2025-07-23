@@ -16,7 +16,7 @@ router.get('/:userId', async (req, res) => {
 });
 
 /*
-    post rank of user
+    set rank of user
 */
 
 router.post('/:userId', async (req, res) => {

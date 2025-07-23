@@ -28,3 +28,13 @@ export interface BestTricksResult {
 	error: any;
 	rows: BestTrickRow[];
 }
+
+export const ranks = [
+	'Wood',
+	'Bronze',
+	'Silver',
+	'Gold',
+	'Platinum',
+	'Diamond',
+	'Legendary',
+];
