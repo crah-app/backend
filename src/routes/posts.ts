@@ -13,6 +13,7 @@ import {
 	setCommentLike,
 	setPostComment,
 	setPostLikeStatus,
+	setReaction,
 } from '../middleware/posts.js';
 import { dbConnection } from '../constants/dbConnection.js';
 import { errorHandler } from '../constants/errors.js';
@@ -110,3 +111,7 @@ router.post(
 		errorHandler(await setCommentLike(res, req, dbConnection), res);
 	},
 );
+
+router.post('/reaction', async (req: Request, res: Response) => {
+	errorHandler(await setReaction(res, req, dbConnection), res);
+});

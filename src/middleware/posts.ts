@@ -549,6 +549,7 @@ export async function getPopularPosts(
 		MAX(e.width) AS sourceWidth,
 		MAX(e.height) AS sourceHeight,
 		MAX(e.sourceRatio) AS sourceRatio,
+		GROUP_CONCAT(DISTINCT r.EmojiId) AS Reactions,
 
 		EXISTS(SELECT 1 FROM Likes l2 WHERE l2.PostId = p.Id AND l2.UserId = ?) AS liked,
 
@@ -563,7 +564,7 @@ export async function getPopularPosts(
 		posts p
 		JOIN Users u ON u.Id = p.UserId
 		LEFT JOIN Comments c2 ON c2.PostId = p.Id
-		LEFT JOIN Reactions r ON r.PostId = p.Id
+		LEFT JOIN Reactions r ON r.PostId = p.Id AND r.isDeleted = 0
 		LEFT JOIN Sources e ON e.\`key\` = p.SourceKey
 		LEFT JOIN (
 		SELECT PostId, COUNT(*) AS likesCount FROM Likes GROUP BY PostId
@@ -658,7 +659,7 @@ export async function getLatelyPostsBySpecificPostType(
 		}
 
 		const query = `
-				SELECT 
+		SELECT 
 		p.Id,
 		p.UserId,
 		u.Name AS UserName,
@@ -678,6 +679,7 @@ export async function getLatelyPostsBySpecificPostType(
 		MAX(e.width) AS sourceWidth,
 		MAX(e.height) AS sourceHeight,
 		MAX(e.sourceRatio) AS sourceRatio,
+		GROUP_CONCAT(DISTINCT r.EmojiId) AS Reactions,
 
 		EXISTS(SELECT 1 FROM Likes l2 WHERE l2.PostId = p.Id AND l2.UserId = ?) AS liked,
 
@@ -692,7 +694,7 @@ export async function getLatelyPostsBySpecificPostType(
 		posts p
 		JOIN Users u ON u.Id = p.UserId
 		LEFT JOIN Comments c2 ON c2.PostId = p.Id
-		LEFT JOIN Reactions r ON r.PostId = p.Id
+		LEFT JOIN Reactions r ON r.PostId = p.Id AND r.isDeleted = 0
 		LEFT JOIN Sources e ON e.\`key\` = p.SourceKey
 		LEFT JOIN (
 		SELECT PostId, COUNT(*) AS likesCount FROM Likes GROUP BY PostId
@@ -762,6 +764,50 @@ export async function getLatelyPostsBySpecificPostType(
 	} catch (error) {
 		console.warn('Error [getLatelyVideos]', error);
 		res.status(500).json({ error });
+	} finally {
+		conn && conn.release();
+	}
+}
+
+// current user sets reaction to post
+export async function setReaction(
+	res: Response,
+	req: Request,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
+		const userId = sessionToken.sub;
+		const { postId, emojiId } = req.body;
+
+		if (!postId || !emojiId) {
+			return res.status(400).json({ error: 'Missing postId or emojiId' });
+		}
+
+		const postId_nbr = Number(postId);
+
+		if (isNaN(postId_nbr)) {
+			return res.status(400).json({ error: 'Invalid postId' });
+		}
+
+		const query = `
+		INSERT INTO Reactions (PostId, UserId, EmojiId, IsDeleted)
+		VALUES (?, ?, ?, FALSE)
+		ON DUPLICATE KEY UPDATE IsDeleted = IF(IsDeleted = FALSE, TRUE, FALSE);
+		`;
+
+		await conn.query(query, [postId_nbr, userId, emojiId]);
+		res.status(200).json({ success: true });
+	} catch (error) {
+		console.warn('Error [setReaction]', error);
+		res
+			.status(500)
+			.json({ error: 'Something went wrong [setReaction]', message: error });
 	} finally {
 		conn && conn.release();
 	}
