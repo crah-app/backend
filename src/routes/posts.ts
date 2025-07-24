@@ -14,6 +14,7 @@ import {
 	setPostComment,
 	setPostLikeStatus,
 	setReaction,
+	setReport,
 } from '../middleware/posts.js';
 import { dbConnection } from '../constants/dbConnection.js';
 import { errorHandler } from '../constants/errors.js';
@@ -112,6 +113,13 @@ router.post(
 	},
 );
 
+// user sets reaction
 router.post('/reaction', async (req: Request, res: Response) => {
 	errorHandler(await setReaction(res, req, dbConnection), res);
+});
+
+// user reports a post
+// bearer
+router.post('/report', async (req: Request, res: Response) => {
+	errorHandler(await setReport(res, req, dbConnection), res);
 });

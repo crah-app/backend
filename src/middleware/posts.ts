@@ -315,7 +315,7 @@ export async function getPostsOfFriends(
 			LIMIT 50;
 		`;
 
-		const [rows] = await conn.query(query, [userId]);
+		const [rows] = await conn.query(query, [userId, userId, userId]);
 		res.status(200).json(rows);
 	} catch (error) {
 		console.warn('Error: [getPostsOfFriends]', error);
@@ -808,6 +808,33 @@ export async function setReaction(
 		res
 			.status(500)
 			.json({ error: 'Something went wrong [setReaction]', message: error });
+	} finally {
+		conn && conn.release();
+	}
+}
+
+// report post
+export async function setReport(res: Response, req: Request, db: DbConnection) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
+		const userId = sessionToken.sub;
+		const { postId, reason } = req.body;
+
+		const query = `
+		INSERT INTO PostReports (UserId, PostId, Reason)
+		VALUES (?, ?, ?);
+		`;
+
+		await conn.query(query, [userId, postId, reason]);
+		res.status(200).json({ success: true });
+	} catch (error) {
+		console.warn('Error [setReport]', error);
+		res.status(500).json({ success: false, error });
 	} finally {
 		conn && conn.release();
 	}
