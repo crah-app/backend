@@ -9,6 +9,7 @@ import {
 	handleGetOverallBestTricksOfUser,
 } from './tricks.js';
 import { ranks } from '../types/index.js';
+import { randomUUID } from 'crypto';
 
 // export to /types
 type UserSetting = 'setting01' | 'setting02';
@@ -541,6 +542,42 @@ export async function setRegionOfUser(
 		res.status(200).json({ success: true });
 	} catch (error) {
 		console.warn('Error [setRegionOfUser]', error);
+		res.status(500).json({ error, success: false });
+	} finally {
+		conn.release();
+	}
+}
+
+// user gives feedback
+export async function giveFeedback(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
+		const userId = sessionToken.sub;
+		const { userId: userId_body, feedback } = req.body;
+
+		if (userId_body !== userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const query = `
+			INSERT INTO Feedback (Id, UserId, Message)
+			VALUES (?, ?, ?);
+		`;
+
+		await conn.query(query, [randomUUID(), userId, feedback]);
+
+		res.status(200).json({ success: true });
+	} catch (error) {
+		console.warn('Error [giveFeedback]', error);
 		res.status(500).json({ error, success: false });
 	} finally {
 		conn.release();

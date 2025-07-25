@@ -9,6 +9,7 @@ import {
 	getGlobalLeaderboard,
 	getRidersOfSpecificRank,
 	getUserStats,
+	giveFeedback,
 	isUsernameDuplicate,
 	searchRankedUser,
 	setRegionOfUser,
@@ -103,6 +104,12 @@ router.get('/ranked/allStats', async (req: Request, res: Response) => {
 // bearer
 router.post('/region', async (req: Request, res: Response) => {
 	errorHandler(await setRegionOfUser(req, res, dbConnection), res);
+});
+
+// user gives feedback
+// bearer
+router.post('/feedback', async (req, res) => {
+	errorHandler(await giveFeedback(req, res, dbConnection), res);
 });
 
 export default router;

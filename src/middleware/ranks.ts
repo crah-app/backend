@@ -122,7 +122,7 @@ export async function insertIntoRankOvertime(
 
 	try {
 		const query = `
-			INSERT INTO RankOvertime (UserId, rank, rankPoints, rankTotalPoints)
+			INSERT INTO RankOvertime (UserId, \`rank\`, rankPoints, rankTotalPoints)
 			VALUES (?, ?, ?, ?);
 		`;
 
@@ -158,11 +158,9 @@ export async function getRankOvertime(
 		const { interval } = req.params;
 
 		if (!interval) {
-			return res
-				.status(400)
-				.json({
-					error: `Parameter Interval: string <"Month" | "Year"> is missing`,
-				});
+			return res.status(400).json({
+				error: `Parameter Interval: string <"Month" | "Year"> is missing`,
+			});
 		}
 
 		const query =

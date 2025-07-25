@@ -814,6 +814,19 @@ CREATE TABLE Sources (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- User Feedback for Crah Developers to read
+CREATE TABLE Feedback (
+    Id VARCHAR(255) NOT NULL,
+    UserId VARCHAR(255) NOT NULL,
+    Message TEXT NOT NULL,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Status ENUM('New', 'Read', 'Resolved') DEFAULT 'New',
+
+    PRIMARY KEY (Id),
+    FOREIGN KEY (UserId) REFERENCES Users(Id)
+);
+
+
 -- INSERT INTO Users (Id, Name) VALUES
 -- ('user_1', 'John Doe'),
 -- ('user_2', 'Jane Smith'),

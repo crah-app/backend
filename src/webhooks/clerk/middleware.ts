@@ -14,6 +14,7 @@ export async function handleUser(
 	req: Request,
 	res: Response,
 ) {
+	console.log(eventType);
 	switch (eventType) {
 		case 'user.created':
 			return userCreated(userData, req, res);
@@ -27,13 +28,20 @@ export async function handleUser(
 }
 
 async function userCreated(userData: UserJSON, req: Request, res: Response) {
+	const conn = await dbConnection.connect();
+	if (conn instanceof Err) throw conn;
+
 	try {
-		const conn = await dbConnection.connect();
-		if (conn instanceof Err) return conn;
+		await conn.beginTransaction();
 
 		const query = `
-            INSERT INTO Users (Id, Name, createdAt, avatar) VALUES (?,?,?,?)
-            `;
+			INSERT INTO Users (Id, Name, createdAt, avatar) VALUES (?,?,?,?)
+		`;
+
+		const rankOvertime_query = `
+			INSERT INTO rankovertime (UserId, \`rank\`, rankPoints, rankTotalPoints)
+			VALUES (?, ?, ?, ?);
+		`;
 
 		await conn.query(query, [
 			userData.id,
@@ -42,13 +50,20 @@ async function userCreated(userData: UserJSON, req: Request, res: Response) {
 			userData.image_url,
 		]);
 
-		conn.release();
+		await conn.query(rankOvertime_query, [userData.id, 'Wood', 0, 0]);
+
+		await conn.commit();
 
 		console.log('Webhook received. User created successfully!');
 		return res.status(200).send('Webhook received. User created successfully!');
 	} catch (error) {
+		if (conn) {
+			await conn.rollback();
+		}
 		console.error('Error creating user:', error);
-		return res.status(500).json({ error: 'Failed to create group chat' });
+		return res.status(500).json({ error: 'Failed to create user' });
+	} finally {
+		if (conn) conn.release();
 	}
 }
 
