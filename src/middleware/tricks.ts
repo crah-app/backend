@@ -1,19 +1,16 @@
 import { Err, ErrType } from './../constants/errors.js';
 import { Request, Response } from 'express';
 import DbConnection from './../constants/dbConnection.js';
-import { verifyJwt, verifySessionToken } from './auth.js';
+import { verifySessionToken } from './auth.js';
 import { Trick, TrickDescription } from '../trickLogic/trick.js';
 import { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import {
 	AllTricksData,
-	FullTrick,
 	TrickDifficulty,
 	TrickDifficultyOrder,
 	TrickFromDb,
 	TrickFromFrontend,
-	TrickType,
 } from '../types/tricklogic.js';
-import { ChecksumAlgorithm } from '@aws-sdk/client-s3';
 import { GeneralSpot } from '../trickLogic/spot.js';
 import { setUserRank } from './ranks.js';
 
@@ -204,7 +201,12 @@ export async function setCurrentUserTricks(
 		// @ts-ignore
 		const avg = pointsOfBestTricks / bestTricks.rows.length;
 
-		const { new_rank, old_rank } = await setUserRank(userId, avg, db);
+		const { new_rank, old_rank } = await setUserRank(
+			userId,
+			avg,
+			db,
+			trickTotalPoints as number,
+		);
 
 		// returns average user points, total user points, user rank, total points of all added tricks, trick Difficulty of best trick added
 		res.status(200).json({

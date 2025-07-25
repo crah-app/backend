@@ -3,6 +3,7 @@ import { Response, Request } from 'express';
 import { dbConnection } from '../constants/dbConnection.js';
 import { errorHandler } from '../constants/errors.js';
 import {
+	getAllRankStatsOfUser,
 	getAllUsers,
 	getFriendsOfUser,
 	getGlobalLeaderboard,
@@ -10,6 +11,7 @@ import {
 	getUserStats,
 	isUsernameDuplicate,
 	searchRankedUser,
+	setRegionOfUser,
 	setRiderTypeOfUser,
 } from '../middleware/users.js';
 
@@ -90,5 +92,17 @@ router.get(
 		errorHandler(await searchRankedUser(req, res, dbConnection), res);
 	},
 );
+
+// get all detailed stats of user
+// bearer
+router.get('/ranked/allStats', async (req: Request, res: Response) => {
+	errorHandler(await getAllRankStatsOfUser(req, res, dbConnection), res);
+});
+
+// set region and country of user
+// bearer
+router.post('/region', async (req: Request, res: Response) => {
+	errorHandler(await setRegionOfUser(req, res, dbConnection), res);
+});
 
 export default router;

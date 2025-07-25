@@ -415,3 +415,134 @@ export async function getGlobalLeaderboard(
 		conn.release();
 	}
 }
+
+// get detailed rank insides of user regional and global
+export async function getAllRankStatsOfUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
+		const userId = sessionToken.sub;
+
+		const query = `
+SELECT 
+  u.*,
+  ROW_NUMBER() OVER (ORDER BY u.rankPoints DESC) AS rankGlobalIndex,
+  ROUND(
+    100 * (totalUsers.total - ROW_NUMBER() OVER (ORDER BY u.rankPoints DESC) + 1) / totalUsers.total,
+    2
+  ) AS rankGlobalRelative,
+
+  ROW_NUMBER() OVER (PARTITION BY u.country ORDER BY u.rankPoints DESC) AS rankRegionalIndex,
+  ROUND(
+    100 * (regionalUsers.totalRegional - ROW_NUMBER() OVER (PARTITION BY u.country ORDER BY u.rankPoints DESC) + 1) / regionalUsers.totalRegional,
+    2
+  ) AS rankRegionalRelative,
+
+  bestTrick.Id AS TrickId,   
+  bestTrick.Name AS TrickName,
+  bestTrick.Points AS TrickPoints,
+  bestTrick.Difficulty AS TrickDifficulty,
+  bestTrick.Spot AS TrickSpot,
+  bestTrick.Date AS TrickDate
+
+FROM 
+  Users u
+
+JOIN 
+  (SELECT COUNT(*) AS total FROM Users) totalUsers
+
+JOIN 
+  (SELECT country, COUNT(*) AS totalRegional FROM Users GROUP BY country) regionalUsers 
+  ON u.country = regionalUsers.country
+
+LEFT JOIN (
+  SELECT 
+    t.Id,
+    t.UserId,
+    t.Name,
+    gs.Points,
+    gs.Difficulty,
+    gs.Spot,
+    gs.Date
+  FROM Tricks t
+  JOIN GeneralSpots gs ON t.Id = gs.TrickId
+  JOIN (
+    SELECT t.UserId, MAX(gs.Points) AS MaxPoints
+    FROM Tricks t
+    JOIN GeneralSpots gs ON t.Id = gs.TrickId
+    GROUP BY t.UserId
+  ) best ON best.UserId = t.UserId AND best.MaxPoints = gs.Points
+) bestTrick ON u.Id = bestTrick.UserId
+
+WHERE u.Id = ?
+LIMIT 1;
+		`;
+
+		const [rows] = await conn.query(query, [userId]);
+		res.status(200).json(rows);
+	} catch (error) {
+		console.warn('Error [getAllRankStatsOfUser]', error);
+		res.status(500).json({ error });
+	} finally {
+		conn.release();
+	}
+}
+
+// set region and country
+export async function setRegionOfUser(
+	req: Request,
+	res: Response,
+	db: DbConnection,
+) {
+	const conn = await db.connect();
+	if (conn instanceof Err) throw conn;
+
+	try {
+		const { sessionToken } = await verifySessionToken(req, res);
+		if (!sessionToken) return;
+
+		const userId = sessionToken.sub;
+		const { region, country, userId_body } = req.body;
+
+		if (!region || !country) {
+			return res
+				.status(400)
+				.json({ error: 'region or country missing in body' });
+		}
+
+		if (region.length > 105 || country.length > 105) {
+			return res.status(400).json({ error: 'region or country too long' });
+		}
+
+		if (userId_body !== userId) {
+			return res.status(401).json({ error: 'Not Authenticated' });
+		}
+
+		const query = `
+		UPDATE Users
+		SET region = ?, country = ?
+		WHERE Id = ?
+		`;
+
+		const [rows]: any = await conn.query(query, [userId, region, country]);
+
+		if (rows.affectedRows === 0) {
+			return res.status(404).json({ error: 'User not found' });
+		}
+
+		res.status(200).json({ success: true });
+	} catch (error) {
+		console.warn('Error [setRegionOfUser]', error);
+		res.status(500).json({ error, success: false });
+	} finally {
+		conn.release();
+	}
+}

@@ -832,6 +832,8 @@ export async function setReport(res: Response, req: Request, db: DbConnection) {
 
 		await conn.query(query, [userId, postId, reason]);
 		res.status(200).json({ success: true });
+
+		// send push notification to all moderators
 	} catch (error) {
 		console.warn('Error [setReport]', error);
 		res.status(500).json({ success: false, error });

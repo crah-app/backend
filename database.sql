@@ -17,9 +17,21 @@ CREATE TABLE Users (
     `rank` ENUM('Wood', 'Bronze', 'Silver', 'Gold', 'Platinum','Diamond', 'Legendary') NOT NULL,
     rankPoints INT DEFAULT 0,
     level INT DEFAULT 0,
+    region varchar(105) DEFAULT NULL,
 
     PRIMARY KEY (Id)
 );
+
+CREATE TABLE RankOvertime (
+  Id INT AUTO_INCREMENT PRIMARY KEY,
+  UserId VARCHAR(100) NOT NULL,
+  `rank` ENUM('Wood', 'Bronze', 'Silver', 'Gold', 'Platinum','Diamond', 'Legendary') NOT NULL,
+  rankPoints INT NOT NULL,
+  rankTotalPoints INT NOT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (UserId) REFERENCES Users(Id)
+);
+
 
 -- FRIENDS
 CREATE TABLE Friends (
