@@ -22,7 +22,7 @@ export async function getPostById(
 ): Promise<Err | void> {
 	try {
 		const postId = req.body.postId;
-		const result = await getAllPostsHandler(db, null, postId);
+		const result = await getAllPostsHandler(db, null, postId, 10, 0, 'postid');
 
 		res.status(200).json(result);
 	} catch (err) {
@@ -40,7 +40,7 @@ export async function getAllPostsByUserId(
 ): Promise<Err | void> {
 	try {
 		const userId = req.params.userId;
-		const result = await getAllPostsHandler(db, userId);
+		const result = await getAllPostsHandler(db, userId, null, 10, 0, 'userid');
 
 		res.status(200).json(result);
 	} catch (err) {
@@ -55,30 +55,36 @@ export async function getAllPostsHandler(
 	db: DbConnection,
 	userId: string | null = null,
 	postId: number | null = null,
+	limit: number = 10,
+	offset: number = 0,
+	type: 'all' | 'postid' | 'userid',
 ) {
+	const conn = await db.connect();
+	if (conn instanceof Err) return conn;
+
 	try {
-		const query = userId
-			? allPostsQueryByUserId
-			: postId
-			? getPostByPostId
-			: allPostsQuery;
+		const query =
+			type === 'userid'
+				? allPostsQueryByUserId
+				: type === 'postid'
+				? getPostByPostId
+				: allPostsQuery;
 
-		const values = userId
-			? [userId, userId]
-			: postId
-			? [userId, postId]
-			: [userId, userId];
+		const values =
+			type === 'userid'
+				? [userId, userId]
+				: type === 'postid'
+				? [userId, postId]
+				: [userId, userId, limit, offset];
 
-		const conn = await db.connect();
-		if (conn instanceof Err) return conn;
-
-		const [rows] = await conn.execute(query, values);
-		conn.release();
+		const [rows] = await conn.query(query, values);
 
 		return rows;
 	} catch (err) {
 		console.warn('Error [getAllPostsHandler]', err);
 		return err as Err;
+	} finally {
+		conn && conn.release();
 	}
 }
 
@@ -94,12 +100,17 @@ export async function getAllPosts(
 
 	try {
 		const userId = sessionToken.sub;
+		const limit = Number(req.query.limit);
+		const offset = Number(req.query.offset);
 
-		if (userId !== url_userId) {
-			return res.status(401).json({ error: 'Not Authenticated' });
-		}
-
-		const result = await getAllPostsHandler(dbConnection, url_userId, postId);
+		const result = await getAllPostsHandler(
+			dbConnection,
+			userId,
+			postId,
+			limit,
+			offset,
+			'all',
+		);
 		return res.status(200).json(result);
 	} catch (err) {
 		console.warn('Error [getAllPosts]', err);

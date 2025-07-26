@@ -68,9 +68,7 @@ router.get(
 
 // get all posts
 router.get('/all/currentUser/:userId', async (req: Request, res: Response) => {
-	const userId = req.params.userId;
-
-	errorHandler(await getAllPosts(res, req, dbConnection, userId), res);
+	errorHandler(await getAllPosts(res, req, dbConnection), res);
 });
 
 // get all posts from friends

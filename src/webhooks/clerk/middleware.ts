@@ -1,9 +1,4 @@
-import express, { Response, Request } from 'express';
-import {
-	generatePresignedUrl,
-	markSourceUploaded,
-} from '../../middleware/source.js';
-import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
+import { Response, Request } from 'express';
 import { dbConnection } from '../../constants/dbConnection.js';
 import { Err } from '../../constants/errors.js';
 import { UserJSON } from '@clerk/backend';
@@ -45,7 +40,8 @@ async function userCreated(userData: UserJSON, req: Request, res: Response) {
 
 		await conn.query(query, [
 			userData.id,
-			userData.username,
+			userData.username ??
+				`${userData.first_name ?? 'John'} ${userData.last_name ?? 'Doe23'}`,
 			new Date(userData.created_at),
 			userData.image_url,
 		]);
@@ -61,7 +57,9 @@ async function userCreated(userData: UserJSON, req: Request, res: Response) {
 			await conn.rollback();
 		}
 		console.error('Error creating user:', error);
-		return res.status(500).json({ error: 'Failed to create user' });
+		return res
+			.status(500)
+			.json({ error: 'Failed to create user', message: error });
 	} finally {
 		if (conn) conn.release();
 	}
@@ -72,20 +70,34 @@ export async function userDeleted(
 	req: Request,
 	res: Response,
 ) {
+	const conn = await dbConnection.connect();
+	if (conn instanceof Err) return conn;
+
 	try {
-		const conn = await dbConnection.connect();
-		if (conn instanceof Err) return conn;
+		await conn.beginTransaction();
+
+		const deleteRankOvertimeQuery = `DELETE FROM rankovertime WHERE UserId = ?`;
 
 		const query = `DELETE FROM Users WHERE Id = ?`;
 
+		await conn.query(deleteRankOvertimeQuery, [userData.id]);
 		await conn.query(query, [userData.id]);
 
-		conn.release();
+		await conn.commit();
+
 		console.log('Webhook received. User deleted successfully!');
 		return res.status(200).send('Webhook received. User deleted successfully!');
 	} catch (error) {
+		if (conn) {
+			await conn.rollback();
+		}
+
 		console.error('Error deleting user:', error);
-		return res.status(500).json({ error: 'Failed to delete user' });
+		return res
+			.status(500)
+			.json({ error: 'Failed to delete user', message: error });
+	} finally {
+		conn && conn.release();
 	}
 }
 
@@ -94,10 +106,10 @@ export async function userUpdated(
 	req: Request,
 	res: Response,
 ) {
-	try {
-		const conn = await dbConnection.connect();
-		if (conn instanceof Err) return conn;
+	const conn = await dbConnection.connect();
+	if (conn instanceof Err) return conn;
 
+	try {
 		const query = `
 			UPDATE Users
 			SET Name = ?, lastActiveAt = ?, avatar = ?
@@ -116,6 +128,10 @@ export async function userUpdated(
 		return res.status(200).send('Webhook received. User updated successfully!');
 	} catch (error) {
 		console.error('Error updating user:', error);
-		return res.status(500).json({ error: 'Failed to update user' });
+		return res
+			.status(500)
+			.json({ error: 'Failed to update user', message: error });
+	} finally {
+		conn && conn.release();
 	}
 }
